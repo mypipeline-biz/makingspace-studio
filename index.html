@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Making Space — Creative Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fraunces:ital,wght@0,300;0,700;1,300;1,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+<style>
+  :root {
+    --ink: #0f0e0c;
+    --cream: #f5f0e8;
+    --pink: #e8177a;
+    --pink-dark: #a8105a;
+    --pink-light: #f564a9;
+    --sage: #8aaa7a;
+    --gold: #d4a843;
+    --pale: #e8e2d6;
+    --muted: #7a756e;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Fraunces', Georgia, serif;
+    background: var(--cream);
+    color: var(--ink);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  .cursor {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--pink);
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9999;
+    transition: transform 0.15s ease, background 0.2s;
+    transform: translate(-50%, -50%);
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--pink);
+    position: fixed; top: 0; left: 0;
+    pointer-events: none; z-index: 9998;
+    transition: transform 0.35s ease;
+    transform: translate(-50%, -50%);
+    opacity: 0.6;
+  }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.2rem 3rem;
+    mix-blend-mode: multiply;
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem; letter-spacing: 0.12em;
+    color: var(--ink); text-decoration: none;
+  }
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--ink); text-decoration: none; position: relative; transition: color 0.2s;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute; bottom: -3px; left: 0;
+    width: 0; height: 1.5px; background: var(--pink); transition: width 0.3s ease;
+  }
+  .nav-links a:hover::after { width: 100%; }
+
+  .page { display: none; min-height: 100vh; }
+  .page.active { display: block; }
+
+  /* ══ HOME ══ */
+  .hero {
+    min-height: 100vh;
+    display: grid; grid-template-columns: 1fr 1fr;
+    position: relative; overflow: hidden;
+  }
+  .hero-left {
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 8rem 3rem 5rem; position: relative; z-index: 2;
+  }
+  .hero-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--pink); margin-bottom: 1.5rem;
+  }
+  .hero-headline {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(6rem, 11vw, 12rem); line-height: 0.88;
+    letter-spacing: 0.02em; color: var(--ink); margin-bottom: 2.5rem;
+  }
+  .hero-headline span {
+    color: var(--pink); font-style: italic;
+    font-family: 'Fraunces', serif; font-size: 0.75em;
+  }
+  .hero-sub {
+    font-size: 1.05rem; line-height: 1.7; color: var(--muted);
+    max-width: 380px; font-weight: 300; font-style: italic; margin-bottom: 3rem;
+  }
+  .hero-cta {
+    display: inline-flex; align-items: center; gap: 1rem;
+    background: var(--ink); color: var(--cream);
+    font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    padding: 1rem 2rem; text-decoration: none;
+    transition: background 0.3s, color 0.3s; width: fit-content;
+  }
+  .hero-cta:hover { background: var(--pink); }
+  .hero-cta .arrow { transition: transform 0.3s; }
+  .hero-cta:hover .arrow { transform: translateX(6px); }
+  .hero-right {
+    position: relative; overflow: hidden;
+  }
+  .hero-right::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--pink) 0%, var(--pink-dark) 50%, var(--ink) 100%);
+    z-index: 0;
+  }
+  .hero-pattern {
+    position: absolute; inset: 0; z-index: 1; opacity: 0.12;
+    background-image: repeating-linear-gradient(45deg, var(--cream) 0, var(--cream) 1px, transparent 0, transparent 50%);
+    background-size: 20px 20px;
+  }
+  .hero-studio-text {
+    position: absolute; bottom: 4rem; right: -2rem;
+    font-family: 'Bebas Neue', sans-serif; font-size: 14rem;
+    color: transparent; -webkit-text-stroke: 1px rgba(245,240,232,0.2);
+    writing-mode: vertical-rl; z-index: 2; letter-spacing: 0.04em; user-select: none;
+  }
+  .hero-badge {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); z-index: 3;
+    width: 160px; height: 160px; border-radius: 50%;
+    background: var(--gold);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; animation: spin-badge 20s linear infinite;
+  }
+  @keyframes spin-badge { from { transform: translate(-50%,-50%) rotate(0deg); } to { transform: translate(-50%,-50%) rotate(360deg); } }
+  .hero-badge-inner { animation: spin-badge-reverse 20s linear infinite; display: flex; flex-direction: column; align-items: center; }
+  @keyframes spin-badge-reverse { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+  .hero-badge span {
+    font-family: 'DM Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink); display: block; line-height: 1.6;
+  }
+  .hero-scroll {
+    position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem; z-index: 10;
+  }
+  .hero-scroll span { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .scroll-line { width: 1px; height: 40px; background: var(--muted); animation: scroll-pulse 1.8s ease-in-out infinite; }
+  @keyframes scroll-pulse { 0%,100%{transform:scaleY(1);opacity:1;} 50%{transform:scaleY(0.3);opacity:0.3;} }
+
+  .marquee-bar { background: var(--pink); padding: 0.9rem 0; overflow: hidden; white-space: nowrap; }
+  .marquee-track { display: inline-flex; animation: marquee 22s linear infinite; }
+  .marquee-item { font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--cream); padding: 0 2.5rem; }
+  .marquee-dot { color: var(--gold); }
+  @keyframes marquee { from{transform:translateX(0);} to{transform:translateX(-50%);} }
+
+  .section-offer { padding: 8rem 3rem; }
+  .section-header { display: flex; align-items: baseline; gap: 2rem; margin-bottom: 5rem; }
+  .section-num { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.2em; color: var(--pink); }
+  .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem, 5vw, 5.5rem); letter-spacing: 0.04em; line-height: 1; }
+  .offer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; }
+  .offer-card { background: var(--ink); padding: 3rem 2.5rem; position: relative; overflow: hidden; transition: background 0.3s; cursor: none; }
+  .offer-card:nth-child(2) { background: var(--pink); margin-top: -3rem; }
+  .offer-card:nth-child(3) { background: var(--sage); margin-top: 3rem; }
+  .offer-card:hover { background: var(--gold) !important; }
+  .offer-card-num { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; color: rgba(255,255,255,0.12); line-height: 1; margin-bottom: 1rem; }
+  .offer-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: var(--cream); letter-spacing: 0.06em; margin-bottom: 1rem; }
+  .offer-card:nth-child(3) .offer-card-title { color: var(--ink); }
+  .offer-card p { font-size: 0.9rem; line-height: 1.7; color: rgba(245,240,232,0.75); font-weight: 300; }
+  .offer-card:nth-child(3) p { color: rgba(15,14,12,0.7); }
+
+  /* ══ SESSIONS ══ */
+  #sessions { padding-top: 7rem; background: var(--ink); color: var(--cream); }
+  .sessions-hero { padding: 4rem 3rem 6rem; position: relative; overflow: hidden; }
+  .sessions-hero::after { content: 'BOOK'; font-family: 'Bebas Neue', sans-serif; font-size: 22vw; color: transparent; -webkit-text-stroke: 1px rgba(245,240,232,0.06); position: absolute; bottom: -2rem; right: -1rem; user-select: none; pointer-events: none; }
+  .sessions-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem,8vw,9rem); letter-spacing: 0.04em; line-height: 0.9; margin-bottom: 1.5rem; }
+  .sessions-hero h1 em { color: var(--pink); font-style: italic; font-family: 'Fraunces', serif; }
+  .sessions-hero p { font-size: 1rem; color: rgba(245,240,232,0.6); max-width: 500px; font-weight: 300; font-style: italic; line-height: 1.8; }
+  .sessions-filter { display: flex; gap: 1rem; padding: 0 3rem 3rem; flex-wrap: wrap; }
+  .filter-btn { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 0.6rem 1.5rem; border: 1px solid rgba(245,240,232,0.25); background: transparent; color: rgba(245,240,232,0.6); cursor: none; transition: all 0.2s; }
+  .filter-btn:hover, .filter-btn.active { background: var(--pink); border-color: var(--pink); color: var(--cream); }
+  .sessions-list { padding: 0 3rem 6rem; display: flex; flex-direction: column; gap: 2px; }
+  .session-row { display: grid; grid-template-columns: 80px 1fr 150px 160px 140px; align-items: center; background: rgba(245,240,232,0.04); padding: 2rem 2.5rem; gap: 2rem; transition: background 0.2s; cursor: none; }
+  .session-row:hover { background: rgba(232,23,122,0.15); }
+  .session-date { text-align: center; }
+  .session-date .day { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; line-height: 1; color: var(--pink); }
+  .session-date .month { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  .session-info h3 { font-family: 'Fraunces', serif; font-size: 1.25rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .session-info p { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase; }
+  .session-time { font-family: 'DM Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em; color: rgba(245,240,232,0.5); }
+  .session-spots { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em; color: var(--sage); }
+  .session-spots.low { color: var(--gold); }
+  .session-spots.full { color: var(--pink); }
+  .session-book-btn { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 0.7rem 1.4rem; background: var(--pink); color: var(--cream); border: none; cursor: none; transition: background 0.2s; }
+  .session-book-btn:hover { background: var(--gold); color: var(--ink); }
+  .session-book-btn.full-btn { background: rgba(245,240,232,0.1); color: var(--muted); }
+
+  /* ══ MODAL ══ */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(15,14,12,0.88); z-index: 400; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--cream); color: var(--ink); width: 100%; max-width: 520px; padding: 3.5rem; position: relative; animation: modal-in 0.3s ease; }
+  @keyframes modal-in { from{transform:translateY(20px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+  .modal-close { position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; cursor: none; color: var(--muted); transition: color 0.2s; }
+  .modal-close:hover { color: var(--pink); }
+  .modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+  .modal-meta { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 2.5rem; }
+  .form-group { margin-bottom: 1.5rem; }
+  .form-group label { display: block; font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.85rem 1rem; border: 1.5px solid var(--pale); background: transparent; font-family: 'Fraunces', serif; font-size: 0.95rem; color: var(--ink); outline: none; transition: border-color 0.2s; cursor: none; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--pink); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .submit-btn { width: 100%; padding: 1.1rem; background: var(--ink); color: var(--cream); border: none; font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; cursor: none; transition: background 0.2s; margin-top: 0.5rem; }
+  .submit-btn:hover { background: var(--pink); }
+  .success-msg { display: none; text-align: center; padding: 2rem 0; }
+  .success-msg .checkmark { font-size: 3rem; display: block; margin-bottom: 1rem; }
+  .success-msg h3 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; color: var(--sage); margin-bottom: 0.5rem; }
+  .success-msg p { font-size: 0.9rem; color: var(--muted); font-style: italic; }
+
+  /* ══ AUTH MODAL ══ */
+  .auth-overlay { display: none; position: fixed; inset: 0; background: rgba(15,14,12,0.88); z-index: 350; align-items: center; justify-content: center; }
+  .auth-overlay.open { display: flex; }
+  .auth-modal { background: var(--cream); color: var(--ink); width: 100%; max-width: 420px; padding: 2.5rem; position: relative; animation: modal-in 0.3s ease; }
+  .auth-close { position: absolute; top: 1.2rem; right: 1.2rem; background: none; border: none; font-size: 1.3rem; cursor: none; color: var(--muted); transition: color 0.2s; }
+  .auth-close:hover { color: var(--pink); }
+  .auth-title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.06em; margin-bottom: 0.3rem; }
+  .auth-subtitle { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 2rem; }
+  .auth-form { display: none; }
+  .auth-form.active { display: block; }
+  .auth-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 1px solid var(--pale); }
+  .auth-tab { padding: 0.75rem 1rem; background: none; border: none; font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); cursor: none; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .auth-tab.active { color: var(--ink); border-bottom-color: var(--pink); }
+  .auth-tab:hover { color: var(--ink); }
+
+  .auth-field { margin-bottom: 1.2rem; }
+  .auth-field label { display: block; font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  .auth-field input { width: 100%; padding: 0.8rem 1rem; border: 1.5px solid var(--pale); background: transparent; font-family: 'Fraunces', serif; font-size: 0.95rem; color: var(--ink); outline: none; transition: border-color 0.2s; }
+  .auth-field input:focus { border-color: var(--pink); }
+  .auth-checkbox { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1.5rem; }
+  .auth-checkbox input { width: 18px; height: 18px; cursor: none; accent-color: var(--pink); }
+  .auth-checkbox label { margin: 0; font-family: 'Fraunces', serif; font-size: 0.9rem; color: var(--ink); cursor: none; }
+  .auth-error { color: #e05555; font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; margin-bottom: 1rem; display: none; }
+  .auth-error.show { display: block; }
+
+  .auth-submit { width: 100%; padding: 1rem; background: var(--ink); color: var(--cream); border: none; font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; cursor: none; transition: background 0.2s; margin-top: 0.5rem; }
+  .auth-submit:hover { background: var(--pink); }
+
+  .auth-divider { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; }
+  .auth-divider span { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--pale); }
+
+  .auth-oauth-buttons { display: flex; flex-direction: column; gap: 0.75rem; }
+  .auth-oauth-btn {
+    width: 100%; padding: 0.9rem; border: 1.5px solid var(--pale); background: transparent;
+    font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ink); cursor: none; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  }
+  .auth-oauth-btn:hover { border-color: var(--pink); color: var(--pink); }
+  .auth-oauth-btn .icon { font-size: 0.9rem; }
+
+  .auth-footer { text-align: center; margin-top: 1.5rem; font-size: 0.85rem; color: var(--muted); }
+  .auth-footer a { color: var(--pink); text-decoration: none; cursor: none; }
+  .auth-footer a:hover { text-decoration: underline; }
+
+  /* Account menu */
+  .account-menu { position: fixed; top: 1.2rem; right: 3rem; z-index: 101; }
+  .account-btn { background: none; border: none; font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink); cursor: none; transition: color 0.2s; }
+  .account-btn:hover { color: var(--pink); }
+  .account-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--cream); border: 1px solid var(--pale); min-width: 180px; z-index: 102; }
+  .account-dropdown.open { display: block; }
+  .account-dropdown a, .account-dropdown button {
+    display: block; width: 100%; text-align: left; padding: 0.8rem 1rem;
+    background: none; border: none; font-family: 'DM Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink); cursor: none; transition: background 0.2s;
+    text-decoration: none;
+  }
+  .account-dropdown a:hover, .account-dropdown button:hover { background: var(--pale); }
+  .account-dropdown button { color: #e05555; }
+
+  /* ══ PROFILE PAGE ══ */
+  #profile { padding-top: 7rem; background: var(--pale); min-height: 100vh; }
+  .profile-header { padding: 4rem 3rem; border-bottom: 2px solid var(--ink); }
+  .profile-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3rem,5vw,5rem); letter-spacing: 0.04em; line-height: 1; margin-bottom: 0.5rem; }
+  .profile-header p { font-size: 0.95rem; color: var(--muted); font-style: italic; }
+  .profile-body { padding: 3rem; max-width: 800px; }
+  .profile-section { background: var(--cream); padding: 2rem; margin-bottom: 2rem; border: 1px solid var(--pale); }
+  .profile-section h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.05em; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+  .profile-section-edit { margin-left: auto; }
+  .profile-section-edit button { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.5rem 1rem; background: var(--pink); color: var(--cream); border: none; cursor: none; transition: background 0.2s; }
+  .profile-section-edit button:hover { background: var(--pink-dark); }
+  .profile-info-row { display: flex; justify-content: space-between; padding: 0.8rem 0; border-bottom: 1px solid var(--pale); }
+  .profile-info-row:last-child { border-bottom: none; }
+  .profile-info-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .profile-info-value { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 300; color: var(--ink); }
+  .wishlist-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; }
+  .wishlist-item { background: var(--cream); padding: 1.25rem; border: 1px solid var(--pale); }
+  .wishlist-item-title { font-family: 'Fraunces', serif; font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+  .wishlist-item-meta { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.8rem; }
+  .wishlist-item-btn { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.5rem 1rem; background: var(--pink); color: var(--cream); border: none; cursor: none; transition: background 0.2s; }
+  .wishlist-item-btn:hover { background: var(--pink-dark); }
+  .empty-state { text-align: center; padding: 2rem; color: var(--muted); font-style: italic; }
+
+  /* ══ SESSION DETAIL OVERLAY ══ */
+  .sd-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(10,9,8,0.7); backdrop-filter: blur(6px);
+    overflow-y: auto;
+  }
+  .sd-overlay.open { display: block; animation: sd-fade 0.25s ease; }
+  @keyframes sd-fade { from{opacity:0} to{opacity:1} }
+
+  .sd-panel {
+    background: var(--cream); color: var(--ink);
+    min-height: 100vh; max-width: 900px;
+    margin: 0 auto;
+    animation: sd-slide 0.35s cubic-bezier(0.22,1,0.36,1);
+    position: relative;
+  }
+  @keyframes sd-slide { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+  .sd-close {
+    position: fixed; top: 1.5rem; right: 1.5rem; z-index: 400;
+    width: 44px; height: 44px; background: var(--ink); color: var(--cream);
+    border: none; font-size: 1.1rem; cursor: none;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .sd-close:hover { background: var(--pink); }
+
+  /* Hero */
+  .sd-hero {
+    min-height: 340px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 3rem;
+  }
+  .sd-hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+  }
+  .sd-hero-bg-inner {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+  }
+  .sd-hero-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(10,9,8,0.88) 0%, rgba(10,9,8,0.3) 60%, transparent 100%);
+    z-index: 1;
+  }
+  .sd-hero-content { position: relative; z-index: 2; }
+  .sd-category {
+    font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--pink);
+    background: rgba(232,23,122,0.15); border: 1px solid var(--pink);
+    display: inline-block; padding: 0.3rem 0.75rem; margin-bottom: 1rem;
+  }
+  .sd-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.5rem,5vw,4.5rem); letter-spacing: 0.03em; line-height: 0.95;
+    color: var(--cream); margin-bottom: 1.5rem;
+  }
+  .sd-meta-row {
+    display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center;
+  }
+  .sd-meta-pill {
+    font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: rgba(245,240,232,0.65);
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .sd-meta-pill .icon { color: var(--pink); }
+  .sd-price-badge {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.05em;
+    color: var(--gold); margin-left: auto;
+  }
+
+  /* Action bar */
+  .sd-action-bar {
+    display: flex; gap: 1rem; align-items: center;
+    padding: 1.5rem 3rem; background: var(--ink);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .sd-book-btn {
+    flex: 1; padding: 1rem 2rem; background: var(--pink); color: var(--cream);
+    border: none; font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    letter-spacing: 0.18em; text-transform: uppercase; cursor: none; transition: background 0.2s;
+  }
+  .sd-book-btn:hover { background: var(--pink-dark); }
+  .sd-book-btn:disabled { background: rgba(245,240,232,0.15); color: var(--muted); cursor: default; }
+  .sd-save-btn {
+    width: 52px; height: 52px; background: rgba(245,240,232,0.07);
+    border: 1px solid rgba(245,240,232,0.15); color: rgba(245,240,232,0.5);
+    font-size: 1.3rem; cursor: none; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .sd-save-btn:hover { border-color: var(--pink); color: var(--pink); }
+  .sd-save-btn.saved { background: rgba(232,23,122,0.12); border-color: var(--pink); color: var(--pink); }
+  .sd-spots-badge {
+    font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.12em;
+    text-transform: uppercase; padding: 0.4rem 0.9rem; border: 1px solid;
+    white-space: nowrap;
+  }
+  .sd-spots-badge.ok { color: var(--sage); border-color: var(--sage); }
+  .sd-spots-badge.low { color: var(--gold); border-color: var(--gold); }
+  .sd-spots-badge.full { color: var(--pink); border-color: var(--pink); }
+
+  /* Body sections */
+  .sd-body { padding: 3rem; }
+  .sd-section { margin-bottom: 3.5rem; }
+  .sd-section-label {
+    font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.25em;
+    text-transform: uppercase; color: var(--pink); margin-bottom: 1.25rem;
+    padding-bottom: 0.6rem; border-bottom: 1px solid var(--pale);
+    display: flex; align-items: center; gap: 0.6rem;
+  }
+  .sd-section-label::before { content: ''; flex: 1; height: 1px; } /* spacer handled differently */
+  .sd-description {
+    font-size: 1.05rem; line-height: 1.85; color: #3a3630;
+    font-weight: 300;
+  }
+  .sd-description p + p { margin-top: 1rem; }
+  .sd-includes {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 1.5rem;
+  }
+  .sd-include-item {
+    font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em;
+    color: var(--muted); display: flex; align-items: center; gap: 0.5rem;
+  }
+  .sd-include-item::before { content: '✓'; color: var(--sage); font-weight: 700; }
+
+  /* Instructor strip */
+  .sd-instructor {
+    display: flex; gap: 1.5rem; align-items: flex-start;
+    background: var(--pale); padding: 1.5rem;
+  }
+  .sd-instructor-img {
+    width: 80px; height: 80px; flex-shrink: 0; overflow: hidden;
+  }
+  .sd-instructor-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sd-instructor-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 2rem;
+    color: rgba(255,255,255,0.4);
+  }
+  .sd-instructor-name {
+    font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.2rem;
+  }
+  .sd-instructor-role {
+    font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--pink); margin-bottom: 0.6rem;
+  }
+  .sd-instructor-bio { font-size: 0.85rem; line-height: 1.7; color: var(--muted); font-style: italic; font-weight: 300; }
+
+  /* Image gallery */
+  .sd-gallery-grid {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 3px;
+  }
+  .sd-gallery-thumb {
+    aspect-ratio: 1; overflow: hidden; cursor: none; position: relative;
+  }
+  .sd-gallery-thumb:first-child { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; min-height: 220px; }
+  .sd-gallery-thumb-inner {
+    width: 100%; height: 100%; transition: transform 0.4s ease;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3rem; color: rgba(255,255,255,0.18);
+  }
+  .sd-gallery-thumb:first-child .sd-gallery-thumb-inner { font-size: 5rem; }
+  .sd-gallery-thumb:hover .sd-gallery-thumb-inner { transform: scale(1.06); }
+  .sd-gallery-expand {
+    position: absolute; inset: 0; background: rgba(10,9,8,0.5);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s;
+    font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--cream);
+  }
+  .sd-gallery-thumb:hover .sd-gallery-expand { opacity: 1; }
+
+  /* Lightbox */
+  .sd-lightbox {
+    display: none; position: fixed; inset: 0; z-index: 500;
+    background: rgba(10,9,8,0.96);
+    align-items: center; justify-content: center;
+  }
+  .sd-lightbox.open { display: flex; }
+  .sd-lightbox-inner {
+    max-width: 80vw; max-height: 80vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sd-lightbox-inner img { max-width: 100%; max-height: 80vh; object-fit: contain; }
+  .sd-lightbox-inner .sd-lb-placeholder {
+    width: 60vw; height: 60vh; display: flex; align-items: center; justify-content: center;
+    font-size: 10rem; color: rgba(245,240,232,0.1);
+  }
+  .sd-lightbox-close {
+    position: fixed; top: 1.5rem; right: 1.5rem;
+    background: none; border: none; color: rgba(245,240,232,0.5);
+    font-size: 1.5rem; cursor: none; transition: color 0.2s;
+  }
+  .sd-lightbox-close:hover { color: var(--cream); }
+
+  /* Reviews */
+  .sd-reviews { display: flex; flex-direction: column; gap: 1.5rem; }
+  .sd-review {
+    border-left: 2px solid var(--pink); padding: 1rem 1.25rem;
+    background: var(--pale);
+  }
+  .sd-review-stars { color: var(--gold); font-size: 0.75rem; margin-bottom: 0.5rem; letter-spacing: 0.1em; }
+  .sd-review-text {
+    font-size: 0.95rem; line-height: 1.7; color: #3a3630;
+    font-style: italic; font-weight: 300; margin-bottom: 0.6rem;
+  }
+  .sd-review-author {
+    font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .sd-review-avg {
+    display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;
+  }
+  .sd-review-avg-score {
+    font-family: 'Bebas Neue', sans-serif; font-size: 4rem; line-height: 1; color: var(--pink);
+  }
+  .sd-review-avg-detail { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+  /* ══ INSTRUCTORS ══ */
+  #instructors { padding-top: 7rem; background: var(--pale); }
+  .instructors-hero { padding: 4rem 3rem 5rem; border-bottom: 2px solid var(--ink); display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+  .instructors-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem,7vw,8rem); line-height: 0.9; letter-spacing: 0.03em; }
+  .instructors-hero p { max-width: 380px; font-size: 1rem; line-height: 1.75; color: var(--muted); font-weight: 300; font-style: italic; }
+  .instructors-grid { padding: 4rem 3rem; display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; }
+  .instructor-card { background: var(--cream); overflow: hidden; cursor: none; transition: transform 0.3s; position: relative; }
+  .instructor-card:hover { z-index: 2; transform: scale(1.02); }
+  .instructor-img { height: 280px; position: relative; overflow: hidden; }
+  .instructor-img-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 6rem; color: rgba(255,255,255,0.3); letter-spacing: 0.05em; position: relative; }
+  .instructor-specialty { position: absolute; bottom: 1rem; left: 1rem; background: var(--ink); color: var(--cream); font-family: 'DM Mono', monospace; font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 0.35rem 0.75rem; }
+  .instructor-body { padding: 1.8rem; border-top: 2px solid var(--pale); }
+  .instructor-name { font-family: 'Fraunces', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 0.3rem; }
+  .instructor-role { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--pink); margin-bottom: 0.9rem; }
+  .instructor-bio { font-size: 0.85rem; line-height: 1.7; color: var(--muted); font-weight: 300; font-style: italic; }
+  .join-banner { background: var(--pink); padding: 5rem 3rem; display: flex; align-items: center; justify-content: space-between; gap: 3rem; flex-wrap: wrap; }
+  .join-banner h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem,4vw,4.5rem); color: var(--cream); letter-spacing: 0.04em; line-height: 0.95; max-width: 500px; }
+  .join-banner h2 em { font-style: italic; font-family: 'Fraunces', serif; color: var(--gold); }
+  .join-cta-btn { font-family: 'DM Mono', monospace; font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 1.1rem 2.5rem; background: var(--cream); color: var(--ink); border: none; cursor: none; transition: all 0.2s; white-space: nowrap; }
+  .join-cta-btn:hover { background: var(--ink); color: var(--cream); }
+
+  /* ══ SIGNUP ══ */
+  #signup { padding-top: 7rem; background: var(--cream); min-height: 100vh; }
+  .signup-layout { display: grid; grid-template-columns: 1fr 1fr; min-height: calc(100vh - 7rem); }
+  .signup-left { background: var(--ink); padding: 5rem 4rem; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+  .signup-left::after { content: '✦'; font-size: 30rem; color: rgba(245,240,232,0.03); position: absolute; bottom: -5rem; right: -5rem; line-height: 1; user-select: none; }
+  .signup-left h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(3.5rem,5vw,6rem); color: var(--cream); letter-spacing: 0.04em; line-height: 0.92; position: relative; z-index: 1; }
+  .signup-left h2 em { color: var(--pink); font-style: italic; font-family: 'Fraunces', serif; }
+  .signup-left p { font-size: 1rem; line-height: 1.75; color: rgba(245,240,232,0.55); font-style: italic; font-weight: 300; position: relative; z-index: 1; max-width: 380px; }
+  .signup-perks { list-style: none; position: relative; z-index: 1; margin-top: 2rem; }
+  .signup-perks li { font-family: 'DM Mono', monospace; font-size: 0.68rem; letter-spacing: 0.12em; color: rgba(245,240,232,0.6); padding: 0.7rem 0; border-bottom: 1px solid rgba(245,240,232,0.1); display: flex; align-items: center; gap: 0.75rem; }
+  .signup-perks li::before { content: '→'; color: var(--pink); }
+  .signup-right { padding: 5rem 4rem; }
+  .signup-right h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.08em; margin-bottom: 0.4rem; }
+  .signup-right .form-subtitle { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-bottom: 3rem; }
+  .signup-form .form-group input, .signup-form .form-group select, .signup-form .form-group textarea { width: 100%; padding: 0.9rem 1rem; border: 1.5px solid var(--pale); background: transparent; font-family: 'Fraunces', serif; font-size: 0.95rem; color: var(--ink); outline: none; transition: border-color 0.2s; cursor: none; }
+  .signup-form .form-group input:focus, .signup-form .form-group select:focus, .signup-form .form-group textarea:focus { border-color: var(--pink); }
+  .signup-form textarea { resize: vertical; min-height: 110px; }
+  .upload-area { border: 1.5px dashed var(--muted); padding: 2rem; text-align: center; transition: border-color 0.2s; cursor: none; }
+  .upload-area:hover { border-color: var(--pink); }
+  .upload-area p { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  .upload-area .upload-icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+
+  /* ══ GALLERY ══ */
+  #gallery { padding-top: 7rem; background: var(--cream); }
+  .gallery-hero { padding: 4rem 3rem; border-bottom: 2px solid var(--ink); }
+  .gallery-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem,8vw,9rem); letter-spacing: 0.03em; line-height: 0.88; }
+  .gallery-hero h1 span { color: var(--pink); }
+  .gallery-hero-sub { display: flex; align-items: center; justify-content: space-between; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+  .gallery-hero p { font-style: italic; font-weight: 300; color: var(--muted); font-size: 0.95rem; max-width: 400px; line-height: 1.7; }
+  .gallery-count { font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+  .gallery-grid { padding: 3rem; display: grid; grid-template-columns: repeat(4,1fr); gap: 2px; }
+  .gallery-item { position: relative; overflow: hidden; cursor: none; background: var(--pale); }
+  .gallery-item:nth-child(1) { grid-column: span 2; grid-row: span 2; }
+  .gallery-item:nth-child(5) { grid-column: span 2; }
+  .gallery-img { width: 100%; height: 100%; min-height: 220px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 4rem; transition: transform 0.5s ease; position: relative; overflow: hidden; }
+  .gallery-item:hover .gallery-img { transform: scale(1.05); }
+  .gallery-item:nth-child(1) .gallery-img { background: linear-gradient(160deg, var(--pink) 0%, var(--pink-dark) 40%, var(--ink) 100%); font-size: 8rem; color: rgba(245,240,232,0.15); }
+  .gallery-item:nth-child(2) .gallery-img { background: linear-gradient(135deg, #8aaa7a, #3d5c32); color: rgba(245,240,232,0.2); }
+  .gallery-item:nth-child(3) .gallery-img { background: linear-gradient(135deg, #d4a843, #8b6a1a); color: rgba(245,240,232,0.2); }
+  .gallery-item:nth-child(4) .gallery-img { background: linear-gradient(135deg, #2e3b4e, #0f0e0c); color: rgba(245,240,232,0.15); }
+  .gallery-item:nth-child(5) .gallery-img { background: linear-gradient(135deg, var(--pink), var(--gold)); color: rgba(245,240,232,0.15); font-size: 6rem; }
+  .gallery-item:nth-child(6) .gallery-img { background: linear-gradient(135deg, #5e3a6e, #2e1a3e); color: rgba(245,240,232,0.2); }
+  .gallery-item:nth-child(7) .gallery-img { background: linear-gradient(135deg, #3d5c32, #8aaa7a); color: rgba(245,240,232,0.2); }
+  .gallery-overlay { position: absolute; inset: 0; background: var(--ink); opacity: 0; transition: opacity 0.3s; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; padding: 1.5rem; }
+  .gallery-item:hover .gallery-overlay { opacity: 0.92; }
+  .gallery-item-title { font-family: 'Fraunces', serif; font-size: 1.15rem; font-weight: 700; color: var(--cream); margin-bottom: 0.3rem; }
+  .gallery-item-artist { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.8rem; }
+  .gallery-price { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--gold); letter-spacing: 0.06em; margin-bottom: 0.8rem; }
+  .gallery-buy-btn { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; padding: 0.55rem 1.2rem; background: var(--pink); color: var(--cream); border: none; cursor: none; transition: background 0.2s; }
+  .gallery-buy-btn:hover { background: var(--gold); color: var(--ink); }
+  .not-for-sale { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+
+  footer { background: var(--ink); color: var(--cream); padding: 5rem 3rem 3rem; border-top: 2px solid rgba(245,240,232,0.1); }
+  .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 4rem; margin-bottom: 4rem; }
+  .footer-brand .logo-text { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 0.1em; line-height: 1; margin-bottom: 1rem; }
+  .footer-brand p { font-size: 0.85rem; line-height: 1.7; color: rgba(245,240,232,0.45); font-style: italic; font-weight: 300; max-width: 280px; }
+  .footer-col h4 { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--pink); margin-bottom: 1.5rem; }
+  .footer-col ul { list-style: none; }
+  .footer-col ul li { margin-bottom: 0.8rem; }
+  .footer-col ul li a, .footer-col ul li span { font-size: 0.85rem; color: rgba(245,240,232,0.5); text-decoration: none; transition: color 0.2s; cursor: none; }
+  .footer-col ul li a:hover { color: var(--cream); }
+  .footer-bottom { display: flex; align-items: center; justify-content: space-between; padding-top: 2rem; border-top: 1px solid rgba(245,240,232,0.08); }
+  .footer-bottom span { font-family: 'DM Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; color: rgba(245,240,232,0.3); text-transform: uppercase; }
+
+  .fade-in { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 900px) {
+    nav { padding: 1.2rem 1.5rem; }
+    .nav-links { gap: 1.5rem; }
+    .hero { grid-template-columns: 1fr; }
+    .hero-right { display: none; }
+    .hero-left { padding: 8rem 1.5rem 4rem; }
+    .offer-grid { grid-template-columns: 1fr; }
+    .offer-card { margin-top: 0 !important; }
+    .session-row { grid-template-columns: 60px 1fr; gap: 1rem; }
+    .session-time, .session-spots { display: none; }
+    .instructors-grid { grid-template-columns: 1fr 1fr; }
+    .signup-layout { grid-template-columns: 1fr; }
+    .signup-left { display: none; }
+    .gallery-grid { grid-template-columns: 1fr 1fr; }
+    .gallery-item:nth-child(1) { grid-column: span 2; }
+    .gallery-item:nth-child(5) { grid-column: span 2; }
+    .footer-top { grid-template-columns: 1fr 1fr; gap: 2rem; }
+    .section-offer, .sessions-hero, .sessions-filter, .sessions-list,
+    .instructors-hero, .instructors-grid, .join-banner,
+    .gallery-hero, .gallery-grid { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .signup-right { padding: 3rem 1.5rem; }
+    footer { padding: 3rem 1.5rem 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav>
+  <a href="#" class="nav-logo" onclick="showPage('home')">Making Space</a>
+  <ul class="nav-links">
+    <li><a href="#" onclick="showPage('home')">Home</a></li>
+    <li><a href="#" onclick="showPage('sessions')">Sessions</a></li>
+    <li><a href="#" onclick="showPage('instructors')">Instructors</a></li>
+    <li><a href="#" onclick="showPage('signup')">Join Us</a></li>
+    <li><a href="#" onclick="showPage('gallery')">Gallery</a></li>
+    <li><a href="#" onclick="openAuth()" id="navSignIn">Sign In</a></li>
+  </ul>
+</nav>
+
+<!-- HOME -->
+<div id="home" class="page active">
+  <section class="hero">
+    <div class="hero-left">
+      <p class="hero-tag">✦ Creative Studio &amp; Workshop Space</p>
+      <h1 class="hero-headline" id="heroHeadline">Make<br><span>Space</span><br>for Art</h1>
+      <p class="hero-sub" id="heroSub">A community of makers, thinkers, and creators. Book a session, learn from masters, and build something that lasts.</p>
+      <a href="#" class="hero-cta" onclick="showPage('sessions')">Browse Sessions <span class="arrow">→</span></a>
+    </div>
+    <div class="hero-right">
+      <div class="hero-pattern"></div>
+      <div class="hero-studio-text">Studio</div>
+      <div class="hero-badge"><div class="hero-badge-inner"><span>Make</span><span>★</span><span>Create</span><span>★</span><span>Share</span></div></div>
+    </div>
+    <div class="hero-scroll"><span>Scroll</span><div class="scroll-line"></div></div>
+  </section>
+
+  <div class="marquee-bar" aria-hidden="true">
+    <div class="marquee-track" id="marqueeTrack"></div>
+  </div>
+
+  <section class="section-offer">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">What We Offer</h2>
+    </div>
+    <div class="offer-grid">
+      <div class="offer-card fade-in"><div class="offer-card-num">01</div><h3 class="offer-card-title">Book a Session</h3><p>Join workshops led by skilled instructors. Beginners and seasoned makers alike welcome. Materials included.</p></div>
+      <div class="offer-card fade-in"><div class="offer-card-num">02</div><h3 class="offer-card-title">Meet the Makers</h3><p>Our instructors are practising artists and craftspeople, sharing real techniques from real creative lives.</p></div>
+      <div class="offer-card fade-in"><div class="offer-card-num">03</div><h3 class="offer-card-title">Shop the Gallery</h3><p>Browse and buy finished pieces made right here in the studio. Each work comes with the maker's story.</p></div>
+    </div>
+  </section>
+</div>
+
+<!-- SESSIONS -->
+<div id="sessions" class="page">
+  <div class="sessions-hero">
+    <h1>Upcoming<br><em>Sessions</em></h1>
+    <p>All skill levels welcome. Materials provided. Small groups, big ideas.</p>
+  </div>
+  <div class="sessions-filter" id="sessionsFilter"></div>
+  <div class="sessions-list" id="sessionsList"></div>
+</div>
+
+<!-- INSTRUCTORS -->
+<div id="instructors" class="page">
+  <div class="instructors-hero">
+    <h1>Meet the<br>Makers</h1>
+    <p>Our instructors are working artists who bring real-world craft into every session. No theory without practice.</p>
+  </div>
+  <div class="instructors-grid" id="instructorsGrid"></div>
+  <div class="join-banner">
+    <h2>Are <em>you</em> a working artist? Teach with us.</h2>
+    <button class="join-cta-btn" onclick="showPage('signup')">Apply to Instruct →</button>
+  </div>
+</div>
+
+<!-- SIGNUP -->
+<div id="signup" class="page">
+  <div class="signup-layout">
+    <div class="signup-left">
+      <div><h2>Teach<br>What <em>You</em><br>Love</h2></div>
+      <p>Making Space is built on the belief that the best teachers are the ones still making. Share your practice, grow your audience, and get paid to do what you do.</p>
+      <ul class="signup-perks">
+        <li>Set your own schedule &amp; session sizes</li>
+        <li>We handle bookings, payments &amp; admin</li>
+        <li>Access to a fully equipped studio</li>
+        <li>Market your work through our gallery</li>
+        <li>Join a community of working artists</li>
+      </ul>
+    </div>
+    <div class="signup-right">
+      <h3>Instructor Application</h3>
+      <p class="form-subtitle">Tell us about your practice</p>
+      <div class="signup-form" id="signupFormWrapper">
+        <div class="form-row">
+          <div class="form-group"><label>First Name</label><input type="text" placeholder="Rosa"></div>
+          <div class="form-group"><label>Last Name</label><input type="text" placeholder="Chen"></div>
+        </div>
+        <div class="form-group"><label>Email Address</label><input type="email" placeholder="you@studio.com"></div>
+        <div class="form-group"><label>Discipline / Specialism</label>
+          <select><option value="">Select your medium</option><option>Ceramics &amp; Pottery</option><option>Painting</option><option>Life Drawing</option><option>Textiles</option><option>Printmaking</option><option>Sculpture</option><option>Other</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Years Practising</label><input type="number" placeholder="5"></div>
+          <div class="form-group"><label>Teaching Experience</label><select><option>None yet</option><option>Some informal teaching</option><option>Workshops &amp; classes</option><option>Full-time educator</option></select></div>
+        </div>
+        <div class="form-group"><label>Tell us about your practice</label><textarea placeholder="Describe your work, influences, and what you'd love to teach..."></textarea></div>
+        <div class="form-group"><label>Portfolio / Work Samples</label><div class="upload-area"><span class="upload-icon">📁</span><p>Drag &amp; drop files or click to browse</p></div></div>
+        <button class="submit-btn" onclick="submitSignup()">Submit Application →</button>
+      </div>
+      <div class="success-msg" id="signupSuccess"><span class="checkmark">✦</span><h3>Application Received!</h3><p>We'll be in touch within 5 working days.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- GALLERY -->
+<div id="gallery" class="page">
+  <div class="gallery-hero">
+    <h1>Studio<br><span>Works</span></h1>
+    <div class="gallery-hero-sub">
+      <p>Pieces made right here, for sale. Every work comes with the maker's story and a certificate of origin.</p>
+      <span class="gallery-count" id="galleryCount"></span>
+    </div>
+  </div>
+  <div class="gallery-grid" id="galleryGrid"></div>
+</div>
+
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand"><p class="logo-text">Making Space</p><p id="footerTagline">A creative studio and workshop space for makers, artists, and curious hands.</p></div>
+    <div class="footer-col"><h4>Explore</h4><ul><li><a href="#" onclick="showPage('sessions')">Sessions</a></li><li><a href="#" onclick="showPage('instructors')">Instructors</a></li><li><a href="#" onclick="showPage('gallery')">Gallery</a></li><li><a href="#" onclick="showPage('signup')">Teach With Us</a></li></ul></div>
+    <div class="footer-col"><h4>Studio</h4><ul id="footerStudio"></ul></div>
+    <div class="footer-col"><h4>Connect</h4><ul id="footerConnect"></ul></div>
+  </div>
+  <div class="footer-bottom"><span id="footerCopy"></span><span>Made with intention ✦</span></div>
+</footer>
+
+<!-- SESSION DETAIL OVERLAY -->
+<div class="sd-overlay" id="sdOverlay">
+  <div class="sd-panel" id="sdPanel">
+    <button class="sd-close" onclick="closeSessionDetail()">✕</button>
+
+    <div class="sd-hero" id="sdHero">
+      <div class="sd-hero-bg" id="sdHeroBg">
+        <div id="sdHeroBgInner" style="width:100%;height:100%"></div>
+      </div>
+      <div class="sd-hero-scrim"></div>
+      <div class="sd-hero-content">
+        <span class="sd-category" id="sdCategory"></span>
+        <h1 class="sd-title" id="sdTitle"></h1>
+        <div class="sd-meta-row" id="sdMetaRow"></div>
+      </div>
+    </div>
+
+    <div class="sd-action-bar" id="sdActionBar">
+      <button class="sd-save-btn" id="sdSaveBtn" onclick="toggleSave()" title="Save to wishlist">♡</button>
+      <button class="sd-book-btn" id="sdBookBtn" onclick="sdBookNow()">Book Now →</button>
+      <span class="sd-spots-badge" id="sdSpotsBadge"></span>
+    </div>
+
+    <div class="sd-body">
+      <div class="sd-section" id="sdDescSection">
+        <div class="sd-section-label">About This Session</div>
+        <div class="sd-description" id="sdDescription"></div>
+        <div class="sd-includes" id="sdIncludes"></div>
+      </div>
+
+      <div class="sd-section" id="sdInstructorSection">
+        <div class="sd-section-label">Your Instructor</div>
+        <div class="sd-instructor" id="sdInstructor"></div>
+      </div>
+
+      <div class="sd-section" id="sdGallerySection">
+        <div class="sd-section-label">From the Studio</div>
+        <div class="sd-gallery-grid" id="sdGalleryGrid"></div>
+      </div>
+
+      <div class="sd-section" id="sdReviewsSection">
+        <div class="sd-section-label">What People Say</div>
+        <div class="sd-review-avg" id="sdReviewAvg"></div>
+        <div class="sd-reviews" id="sdReviews"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="sd-lightbox" id="sdLightbox" onclick="closeLightbox()">
+  <div class="sd-lightbox-inner" id="sdLightboxInner"></div>
+  <button class="sd-lightbox-close" onclick="closeLightbox()">✕</button>
+</div>
+
+
+<!-- AUTH MODAL -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-modal">
+    <button class="auth-close" onclick="closeAuth()">✕</button>
+    <h2 class="auth-title" id="authTitle">Sign In</h2>
+    <p class="auth-subtitle" id="authSubtitle">or create account</p>
+
+    <div class="auth-tabs" id="authTabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form class="auth-form active" id="loginForm" onsubmit="handleLogin(event)">
+      <div class="auth-error" id="loginError"></div>
+      <div class="auth-field">
+        <label>Email Address</label>
+        <input type="email" id="loginEmail" placeholder="you@email.com" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" required>
+      </div>
+      <div class="auth-checkbox">
+        <input type="checkbox" id="rememberMe">
+        <label for="rememberMe">Remember me for bookings</label>
+      </div>
+      <button type="submit" class="auth-submit">Sign In →</button>
+    </form>
+
+    <!-- SIGNUP FORM -->
+    <form class="auth-form" id="signupForm" onsubmit="handleSignup(event)">
+      <div class="auth-error" id="signupError"></div>
+      <div class="auth-field">
+        <label>Full Name</label>
+        <input type="text" id="signupName" placeholder="e.g. Sarah Chen" required>
+      </div>
+      <div class="auth-field">
+        <label>Email Address</label>
+        <input type="email" id="signupEmail" placeholder="you@email.com" required>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="signupPassword" placeholder="••••••••" minlength="8" required>
+      </div>
+      <div class="auth-field">
+        <label>Phone (optional)</label>
+        <input type="tel" id="signupPhone" placeholder="+44 7700 900000">
+      </div>
+      <div class="auth-field">
+        <label>Experience Level</label>
+        <select id="signupExperience" required style="width:100%;padding:0.8rem 1rem;border:1.5px solid var(--pale);background:transparent;font-family:'Fraunces',serif;font-size:0.95rem;color:var(--ink);outline:none;cursor:none">
+          <option value="">Select level</option>
+          <option>Complete beginner</option>
+          <option>Some experience</option>
+          <option>Intermediate</option>
+          <option>Advanced</option>
+        </select>
+      </div>
+      <button type="submit" class="auth-submit">Create Account →</button>
+    </form>
+
+    <div class="auth-divider"><span>Or continue with</span></div>
+    <div class="auth-oauth-buttons">
+      <button type="button" class="auth-oauth-btn" onclick="oauthSignup('google')"><span class="icon">G</span> Google</button>
+      <button type="button" class="auth-oauth-btn" onclick="oauthSignup('apple')"><span class="icon">🍎</span> Apple</button>
+    </div>
+
+    <div class="auth-footer" id="authFooter"></div>
+  </div>
+</div>
+
+<!-- ACCOUNT MENU -->
+<div class="account-menu" id="accountMenu" style="display:none">
+  <button class="account-btn" onclick="toggleAccountMenu()">Account ▼</button>
+  <div class="account-dropdown" id="accountDropdown">
+    <a href="#" onclick="showPage('profile');toggleAccountMenu()">My Profile</a>
+    <a href="#" onclick="showPage('profile');document.getElementById('profileWishlist').scrollIntoView();toggleAccountMenu()">Wishlist</a>
+    <button onclick="handleLogout()">Logout</button>
+  </div>
+</div>
+
+<!-- PROFILE PAGE -->
+<div id="profile" class="page">
+  <div class="profile-header">
+    <h1 id="profileName">My Profile</h1>
+    <p>Manage your details and bookings</p>
+  </div>
+  <div class="profile-body">
+    <!-- Account Info -->
+    <div class="profile-section">
+      <h2>Account Information <span class="profile-section-edit"><button onclick="editProfile()">Edit</button></span></h2>
+      <div id="profileDisplay"></div>
+    </div>
+
+    <!-- Wishlist -->
+    <div class="profile-section">
+      <h2>Saved Sessions</h2>
+      <div id="profileWishlist"></div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2 id="modalTitle">Book Session</h2>
+    <p class="modal-meta" id="modalMeta"></p>
+    <div id="bookingFormWrapper">
+      <div class="form-row">
+        <div class="form-group"><label>First Name</label><input type="text" placeholder="Your name"></div>
+        <div class="form-group"><label>Last Name</label><input type="text" placeholder="Surname"></div>
+      </div>
+      <div class="form-group"><label>Email</label><input type="email" placeholder="you@email.com"></div>
+      <div class="form-group"><label>Phone (optional)</label><input type="tel" placeholder="+44 7700 900000"></div>
+      <div class="form-group"><label>Experience Level</label><select><option>Complete beginner</option><option>Some experience</option><option>Intermediate</option><option>Advanced</option></select></div>
+      <button class="submit-btn" onclick="confirmBooking()">Confirm Booking →</button>
+    </div>
+    <div class="success-msg" id="bookingSuccess"><span class="checkmark">✦</span><h3>You're Booked!</h3><p>A confirmation has been sent to your email.</p></div>
+  </div>
+</div>
+
+<!-- OAUTH NAME MODAL -->
+<div class="modal-overlay" id="oauthNameModal">
+  <div class="modal" style="max-width:400px;padding:2.5rem">
+    <button class="modal-close" onclick="closeOauthModal()">✕</button>
+    <h2 id="oauthModalTitle">Continue with Google</h2>
+    <p style="margin:0.5rem 0 1.5rem;opacity:0.6;font-size:0.9rem">Enter your name to create your account</p>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="oauthNameInput" placeholder="Your name" style="width:100%;padding:0.75rem;font-size:1rem;border:1px solid #ccc">
+    </div>
+    <div class="auth-error" id="oauthNameError" style="margin:0.5rem 0"></div>
+    <button class="submit-btn" onclick="confirmOauthSignup()" style="width:100%;margin-top:1rem">Create Account →</button>
+  </div>
+</div>
+
+<script>
+// ── DEFAULTS ─────────────────────────────────────────────────────────────────
+const DEFAULTS = {
+  siteInfo: {
+    tagline: "A creative studio and workshop space for makers, artists, and curious hands.",
+    address: "12 Kiln Lane, Chester, CH1 2AB",
+    hours: "Mon–Sat, 9am – 8pm",
+    email: "hello@makingspace.studio",
+    instagram: "https://instagram.com/makingspacestudio",
+    copyright: "© 2026 Making Space Studio"
+  },
+  disciplines: ["Pottery","Painting","Drawing","Textiles","Printmaking","Sculpture"],
+  sessions: [
+    { id:1, title:"Introduction to Wheel Throwing", instructor:"Rosa Chen", category:"pottery", day:"2", month:"APR", time:"10:00 – 13:00", spots:4, maxSpots:12, price:"£65",
+      description:"Get your hands on the wheel for the first time and discover one of the most meditative and rewarding crafts there is. This session takes you from total beginner to pulling your first cylinder — messy, joyful, and entirely your own.\n\nRosa guides every participant individually through centring, opening, and pulling up the clay. You'll leave with at least one finished piece ready to be collected after firing, and a new appreciation for patience.",
+      includes:["All materials & clay","Use of studio wheels","Glazing & firing included","Take-home finished piece","Apron & tools provided","Refreshments"],
+      galleryImages:[],
+      reviews:[
+        { author:"Sarah M.", stars:5, text:"I came in nervous and left absolutely hooked. Rosa makes you feel so at ease and celebrates every small win. My lopsided bowl is now my most treasured possession.", date:"March 2026" },
+        { author:"Tom K.", stars:5, text:"Genuinely the best three hours I've spent in ages. The studio is beautiful and the vibe is just right — focused but fun. Already booked the glazing workshop.", date:"February 2026" },
+        { author:"Priya D.", stars:4, text:"Brilliant session. The class is small enough that Rosa can really help you individually. Would love an intermediate follow-up session!", date:"January 2026" }
+      ]
+    },
+    { id:2, title:"Bold Colour — Acrylic Painting", instructor:"James Adeyemi", category:"painting", day:"5", month:"APR", time:"14:00 – 17:00", spots:8, maxSpots:12, price:"£55",
+      description:"Forget everything you think painting is supposed to look like. This session is about colour confidence — learning to trust your instincts, mix with intention, and make marks that actually mean something.\n\nJames starts each class with a series of rapid exercises to loosen you up, before moving into a longer piece where you'll explore composition, layering, and contrast. No subject matter is too mundane — a chair, a window, the texture of a wall. The point is the paint.",
+      includes:["All paints, canvas & brushes","Mixed media exploration","Take-home finished canvas","Colour theory handout","Artist's eye exercises","Refreshments"],
+      galleryImages:[],
+      reviews:[
+        { author:"Amir H.", stars:5, text:"James has this incredible ability to show you what you're actually trying to do, even when you don't know yourself. Walked out with a painting I genuinely love.", date:"March 2026" },
+        { author:"Claire B.", stars:5, text:"Three hours flew by. I've done art classes before and they always felt a bit stiff, but this was something else — energetic, honest, and really inspiring.", date:"March 2026" },
+        { author:"Jo W.", stars:4, text:"Great session, James is an excellent teacher. Studio atmosphere is fantastic. Docking one star only because I wish it was longer!", date:"February 2026" }
+      ]
+    },
+    { id:3, title:"Life Drawing Evening", instructor:"Mara Voss", category:"drawing", day:"8", month:"APR", time:"18:30 – 21:00", spots:2, maxSpots:12, price:"£40",
+      description:"A classic life drawing session in a warm, focused studio. Mara runs the evening with a loose structure — short gestural poses to start, moving to longer seated and reclining studies. There is no expectation of realism. The goal is observation.\n\nBring your own preferred medium or use what's available in the studio. This is a quiet, thoughtful session — bring a sketchpad and leave your phone at the door.",
+      includes:["Professional life model","Drawing papers & charcoals","Easels & boards provided","Take all work home","Evening refreshments","Optional charcoal tutorials"],
+      galleryImages:[],
+      reviews:[
+        { author:"Rachel F.", stars:5, text:"The best life drawing session in the city, full stop. Mara creates a really special atmosphere — unhurried, respectful, and genuinely instructive.", date:"March 2026" },
+        { author:"Daniel L.", stars:5, text:"I've been coming to these monthly for three months now and my drawing has transformed. It's become a ritual I look forward to every time.", date:"February 2026" },
+        { author:"Nina S.", stars:4, text:"Lovely evening class. The studio lighting is perfect and the model choices are interesting. A real refuge from the week.", date:"January 2026" }
+      ]
+    },
+    { id:4, title:"Natural Dye & Weaving", instructor:"Tomoko Kaito", category:"textiles", day:"12", month:"APR", time:"10:00 – 16:00", spots:0, maxSpots:10, price:"£85",
+      description:"A full-day immersion into the ancient craft of natural dyeing and hand weaving. You'll forage for plant-based dyes, prepare a mordant bath, dye your own yarn, and then weave it into a small textile piece to take home.\n\nTomoko has spent years studying both traditional Japanese dyeing methods and contemporary fibre practice. This is slow, deliberate, sensory work — you'll finish the day with dyed hands and a deep calm.",
+      includes:["All yarns & fibres","Natural dye materials","Loom use & instruction","Take-home woven piece","Lunch & refreshments","Materials handbook"],
+      galleryImages:[],
+      reviews:[
+        { author:"Freya A.", stars:5, text:"One of the most beautiful days I've had in years. Tomoko is a gentle and generous teacher and the results were stunning. I'm obsessed with natural dyeing now.", date:"February 2026" },
+        { author:"Marcus T.", stars:5, text:"I came because my partner dragged me along, and I'm now the one pushing to go back. The lunch break, the smells, the meditative weaving — perfect.", date:"January 2026" }
+      ]
+    },
+    { id:5, title:"Linocut Printmaking", instructor:"Samuel Okonkwo", category:"printmaking", day:"15", month:"APR", time:"13:00 – 16:00", spots:6, maxSpots:12, price:"£50",
+      description:"From blank lino to bold finished print in three hours. Samuel walks you through the full relief printmaking process: designing an image, cutting your block, inking up, and printing multiple editions on paper and fabric.\n\nNo drawing experience needed — the beauty of linocut is in the reduction. You'll leave with a set of your own prints and the skills to set up a basic print studio at home.",
+      includes:["Lino blocks & cutting tools","Printing inks & paper","Edition printing (8+ prints)","Fabric print option","Take all prints home","Technique reference card"],
+      galleryImages:[],
+      reviews:[
+        { author:"Harriet J.", stars:5, text:"Sam makes the whole process feel completely achievable. I designed something I thought was too ambitious and it came out beautifully. Brilliant afternoon.", date:"March 2026" },
+        { author:"Owen P.", stars:4, text:"Great session — really hands-on and satisfying. The smells of the inks, the weight of the roller, the reveal of the print — it's all very gratifying.", date:"February 2026" },
+        { author:"Beth C.", stars:5, text:"Came for a birthday activity with friends and we've all already booked the screenprinting follow-up. Samuel is a fantastic guide.", date:"January 2026" }
+      ]
+    },
+    { id:6, title:"Intermediate Glazing Workshop", instructor:"Rosa Chen", category:"pottery", day:"19", month:"APR", time:"10:00 – 14:00", spots:5, maxSpots:10, price:"£70",
+      description:"Already got the basics of wheel-throwing? This session focuses entirely on the transformation of glazing — how chemistry, temperature, and application technique turn raw clay into something extraordinary.\n\nYou'll glaze a set of bisque pieces using a range of studio glazes and application methods: dipping, pouring, wax resist, and layering. Rosa will explain the science behind glaze behaviour so you can start developing your own palette.",
+      includes:["Bisque pieces to glaze","Studio glaze palette","Multiple application demos","Firing included","Glaze recipe booklet","Refreshments"],
+      galleryImages:[],
+      reviews:[
+        { author:"Yuki M.", stars:5, text:"This filled the exact gap I had after the beginners wheel class. Rosa's knowledge of glaze chemistry is extraordinary and the results from my pieces blew me away.", date:"March 2026" },
+        { author:"Leo R.", stars:5, text:"The wax resist technique alone was worth the price. I've been potting at home and this has completely elevated my finishing work.", date:"February 2026" }
+      ]
+    },
+    { id:7, title:"Sculpture with Found Objects", instructor:"Luisa Paredes", category:"sculpture", day:"22", month:"APR", time:"11:00 – 16:00", spots:3, maxSpots:10, price:"£75",
+      description:"Bring nothing but curiosity. The studio will be full of found objects, offcuts, discarded materials, and raw elements — and your job is to make something that means something.\n\nLuisa's approach to sculpture is fundamentally about relationships: between form and space, between material and intention, between the made and the found. This is a thoughtful, exploratory session that will change how you look at everyday objects.",
+      includes:["All found materials & fixings","Wire, stone, wood offcuts","Hand tools & adhesives","Take-home finished piece","Artist's reflection exercise","Light lunch included"],
+      galleryImages:[],
+      reviews:[
+        { author:"Kim A.", stars:5, text:"Luisa is a revelation as a teacher. She has this gift of asking exactly the right question at the right moment. My piece surprised even me. One of the best creative experiences I've had.", date:"March 2026" },
+        { author:"Patrick S.", stars:4, text:"Unusual, challenging in the best way, and deeply satisfying. The found object approach strips away any preciousness and just lets you make.", date:"February 2026" }
+      ]
+    },
+    { id:8, title:"Portrait Drawing Masterclass", instructor:"Mara Voss", category:"drawing", day:"26", month:"APR", time:"14:00 – 17:00", spots:7, maxSpots:12, price:"£55",
+      description:"The human face is the hardest and most rewarding subject in drawing. This masterclass focuses on proportion, structure, and likeness — the three things that make or break a portrait.\n\nMara takes you through her method step by step: mapping the planes of the skull, placing features with accuracy, then loosening the line to find expression. You'll work from a live model and leave with two or three portrait studies you'll actually want to keep.",
+      includes:["All drawing materials","Live portrait model","Structured demos","Take all studies home","Proportion reference sheet","Refreshments"],
+      galleryImages:[],
+      reviews:[
+        { author:"Alice T.", stars:5, text:"My portraits always used to look like caricatures. After this session they actually look like people. Mara's method is clear, rigorous, and incredibly effective.", date:"March 2026" },
+        { author:"James B.", stars:5, text:"The skull mapping exercise changed everything for me. I've drawn faces for years but never understood the underlying structure this clearly before.", date:"February 2026" },
+        { author:"Chloe N.", stars:4, text:"Excellent session. Mara is precise and encouraging in equal measure. The class size means you get real individual feedback.", date:"January 2026" }
+      ]
+    }
+  ],
+  instructors: [
+    { id:1, initials:"RC", name:"Rosa Chen", role:"Lead Ceramicist", specialty:"Ceramics & Pottery", bio:"Rosa trained at the Royal College of Art and has exhibited across Europe. Her sessions focus on form, texture, and the meditative rhythm of the wheel.", gradient:"linear-gradient(135deg, #e8177a, #a8105a)" },
+    { id:2, initials:"JA", name:"James Adeyemi", role:"Painting Instructor", specialty:"Oil & Acrylic Painting", bio:"A self-taught painter turned gallery artist, James brings raw energy and bold colour theory to his workshops. Expect to get paint everywhere.", gradient:"linear-gradient(135deg, #3d5c32, #8aaa7a)" },
+    { id:3, initials:"MV", name:"Mara Voss", role:"Drawing & Illustration", specialty:"Life Drawing", bio:"Mara spent years as a figure drawing teacher in Berlin before making the UK her home. Her sessions are quiet, focused, and transformative.", gradient:"linear-gradient(135deg, #1a1a2e, #4a4a6e)" },
+    { id:4, initials:"TK", name:"Tomoko Kaito", role:"Textiles & Fibre Arts", specialty:"Textile & Weaving", bio:"Inspired by both traditional Japanese weaving and contemporary fibre art, Tomoko's sessions are explorations in material, pattern, and patience.", gradient:"linear-gradient(135deg, #d4a843, #a07820)" },
+    { id:5, initials:"SO", name:"Samuel Okonkwo", role:"Printmaking & Design", specialty:"Printmaking", bio:"Samuel's background in graphic design and relief printing fuses concept with craft. His workshops demystify the press and make printing accessible to all.", gradient:"linear-gradient(135deg, #a8105a, #e8177a)" },
+    { id:6, initials:"LP", name:"Luisa Paredes", role:"Sculpture & 3D Art", specialty:"Sculpture & Mixed Media", bio:"Luisa works in stone, wire, and found objects — often all at once. Her sessions challenge participants to think beyond the flat surface.", gradient:"linear-gradient(135deg, #2e3b4e, #5e7a9e)" }
+  ],
+  gallery: [
+    { id:1, title:"Earthen Form No. 3", artist:"Rosa Chen", price:"£280", forSale:true, symbol:"◈" },
+    { id:2, title:"Burn Season", artist:"James Adeyemi", price:"£450", forSale:true, symbol:"◆" },
+    { id:3, title:"Woven Light", artist:"Tomoko Kaito", price:"£320", forSale:true, symbol:"◇" },
+    { id:4, title:"Stance Study VII", artist:"Mara Voss", price:"", forSale:false, symbol:"☽" },
+    { id:5, title:"Press Run 001", artist:"Samuel Okonkwo", price:"£180", forSale:true, symbol:"❋" },
+    { id:6, title:"Fragment II", artist:"Luisa Paredes", price:"£640", forSale:true, symbol:"✶" },
+    { id:7, title:"Reduction Bowl", artist:"Rosa Chen", price:"£195", forSale:true, symbol:"❊" }
+  ]
+};
+
+// ── DATA LAYER ────────────────────────────────────────────────────────────────
+function getData(key) {
+  try { const v = localStorage.getItem('mks_' + key); return v ? JSON.parse(v) : DEFAULTS[key]; }
+  catch(e) { return DEFAULTS[key]; }
+}
+
+// ── CURSOR ────────────────────────────────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursorRing');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px';
+  cursorRing.style.left = e.clientX + 'px'; cursorRing.style.top = e.clientY + 'px';
+});
+
+// ── PAGES ─────────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id === 'sessions') renderSessions();
+  if (id === 'instructors') renderInstructors();
+  if (id === 'gallery') renderGallery();
+  if (id === 'profile') renderProfile();
+  setTimeout(animateFadeIns, 100);
+}
+
+// ── MARQUEE ───────────────────────────────────────────────────────────────────
+function renderMarquee() {
+  const disciplines = getData('disciplines');
+  const items = [...disciplines, ...disciplines].map(d =>
+    `<span class="marquee-item">${d}</span><span class="marquee-dot">✦</span>`
+  ).join('');
+  document.getElementById('marqueeTrack').innerHTML = items;
+}
+
+// ── FOOTER ────────────────────────────────────────────────────────────────────
+function renderFooter() {
+  const info = getData('siteInfo');
+  document.getElementById('footerTagline').textContent = info.tagline;
+  document.getElementById('footerCopy').textContent = info.copyright;
+  document.getElementById('footerStudio').innerHTML = `
+    <li><span>${info.hours.split(',')[0] || 'Mon–Sat'}</span></li>
+    <li><span>${info.hours.split(',')[1]?.trim() || '9am – 8pm'}</span></li>
+    <li><span>${info.address}</span></li>`;
+  document.getElementById('footerConnect').innerHTML = `
+    <li><a href="${info.instagram}">Instagram</a></li>
+    <li><a href="#">Newsletter</a></li>
+    <li><a href="mailto:${info.email}">${info.email}</a></li>`;
+}
+
+// ── SESSIONS ──────────────────────────────────────────────────────────────────
+let activeFilter = 'all';
+function filterSessions(btn, cat) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active'); activeFilter = cat; renderSessions();
+}
+function renderSessions() {
+  const sessions = getData('sessions');
+  const disciplines = getData('disciplines');
+  // Filter bar
+  const filterEl = document.getElementById('sessionsFilter');
+  filterEl.innerHTML = `<button class="filter-btn ${activeFilter==='all'?'active':''}" onclick="filterSessions(this,'all')">All</button>` +
+    disciplines.map(d => `<button class="filter-btn ${activeFilter===d.toLowerCase()?'active':''}" onclick="filterSessions(this,'${d.toLowerCase()}')">${d}</button>`).join('');
+  // List
+  const filtered = activeFilter === 'all' ? sessions : sessions.filter(s => s.category === activeFilter);
+  const spotsClass = s => s.spots === 0 ? 'full' : s.spots <= 3 ? 'low' : '';
+  const spotsLabel = s => s.spots === 0 ? 'Full' : `${s.spots} spots left`;
+  document.getElementById('sessionsList').innerHTML = filtered.map(s => `
+    <div class="session-row" onclick="openSessionDetail(${s.id})" style="cursor:none">
+      <div class="session-date"><div class="day">${s.day}</div><div class="month">${s.month}</div></div>
+      <div class="session-info"><h3>${s.title}</h3><p>With ${s.instructor} &nbsp;·&nbsp; ${s.price} per person</p></div>
+      <div class="session-time">${s.time}</div>
+      <div class="session-spots ${spotsClass(s)}">${spotsLabel(s)}</div>
+      ${s.spots === 0
+        ? '<button class="session-book-btn full-btn" onclick="event.stopPropagation()">Full</button>'
+        : `<button class="session-book-btn" onclick="event.stopPropagation();openSessionDetail(${s.id})">View & Book →</button>`}
+    </div>`).join('');
+}
+
+// ── INSTRUCTORS ───────────────────────────────────────────────────────────────
+function renderInstructors() {
+  const instructors = getData('instructors');
+  document.getElementById('instructorsGrid').innerHTML = instructors.map(i => `
+    <div class="instructor-card fade-in">
+      <div class="instructor-img">
+        ${i.photo
+          ? `<img src="${i.photo}" alt="${i.name}" style="width:100%;height:100%;object-fit:cover;display:block">`
+          : `<div class="instructor-img-placeholder" style="background:${i.gradient}">${i.initials}</div>`
+        }
+        <span class="instructor-specialty">${i.specialty}</span>
+      </div>
+      <div class="instructor-body">
+        <h3 class="instructor-name">${i.name}</h3>
+        <p class="instructor-role">${i.role}</p>
+        <p class="instructor-bio">${i.bio}</p>
+      </div>
+    </div>`).join('');
+  setTimeout(animateFadeIns, 50);
+}
+
+// ── GALLERY ───────────────────────────────────────────────────────────────────
+const galleryGradients = [
+  'linear-gradient(160deg, #e8177a 0%, #a8105a 40%, #0f0e0c 100%)',
+  'linear-gradient(135deg, #8aaa7a, #3d5c32)',
+  'linear-gradient(135deg, #d4a843, #8b6a1a)',
+  'linear-gradient(135deg, #2e3b4e, #0f0e0c)',
+  'linear-gradient(135deg, #e8177a, #d4a843)',
+  'linear-gradient(135deg, #5e3a6e, #2e1a3e)',
+  'linear-gradient(135deg, #3d5c32, #8aaa7a)'
+];
+function renderGallery() {
+  const gallery = getData('gallery');
+  const forSale = gallery.filter(g => g.forSale).length;
+  document.getElementById('galleryCount').textContent = `${forSale} work${forSale !== 1 ? 's' : ''} available`;
+  document.getElementById('galleryGrid').innerHTML = gallery.map((g, i) => `
+    <div class="gallery-item">
+      <div class="gallery-img" style="background:${galleryGradients[i % galleryGradients.length]};color:rgba(245,240,232,0.15);font-size:${i===0?'8rem':'4rem'}">${g.symbol}</div>
+      <div class="gallery-overlay">
+        <p class="gallery-item-artist">${g.artist}</p>
+        <p class="gallery-item-title">${g.title}</p>
+        ${g.forSale
+          ? `<p class="gallery-price">${g.price}</p><button class="gallery-buy-btn">Enquire →</button>`
+          : `<p class="not-for-sale">Not for sale</p>`}
+      </div>
+    </div>`).join('');
+}
+
+// ── SESSION DETAIL OVERLAY ────────────────────────────────────────────────────
+const sessionGradients = [
+  'linear-gradient(160deg,#e8177a,#a8105a,#0f0e0c)',
+  'linear-gradient(160deg,#3d5c32,#8aaa7a,#1a2e12)',
+  'linear-gradient(160deg,#1a1a2e,#4a4a6e,#0f0e0c)',
+  'linear-gradient(160deg,#d4a843,#a07820,#3a2800)',
+  'linear-gradient(160deg,#a8105a,#e8177a,#3a0020)',
+  'linear-gradient(160deg,#2e3b4e,#5e7a9e,#0a1520)',
+  'linear-gradient(160deg,#5e3a6e,#2e1a3e,#0f0e0c)',
+  'linear-gradient(160deg,#3d5c32,#d4a843,#0f0e0c)'
+];
+const sessionSymbols = ['◈','◆','◇','☽','❋','✶','❊','✦'];
+
+let currentSessionId = null;
+
+function openSessionDetail(id) {
+  const sessions = getData('sessions');
+  const instructors = getData('instructors');
+  const s = sessions.find(x => x.id === id);
+  if (!s) return;
+  currentSessionId = id;
+
+  const idx = sessions.indexOf(s);
+  const grad = sessionGradients[idx % sessionGradients.length];
+  const sym = sessionSymbols[idx % sessionSymbols.length];
+
+  // Hero background
+  const heroBg = document.getElementById('sdHeroBgInner');
+  if (s.galleryImages && s.galleryImages.length > 0) {
+    heroBg.innerHTML = `<img src="${s.galleryImages[0]}" style="width:100%;height:100%;object-fit:cover;display:block">`;
+  } else {
+    heroBg.innerHTML = `<div style="width:100%;height:340px;background:${grad};display:flex;align-items:center;justify-content:center;font-size:10rem;color:rgba(245,240,232,0.08);font-family:'Bebas Neue',sans-serif">${sym}</div>`;
+  }
+
+  // Category, title, meta
+  document.getElementById('sdCategory').textContent = s.category.charAt(0).toUpperCase() + s.category.slice(1);
+  document.getElementById('sdTitle').textContent = s.title;
+  document.getElementById('sdMetaRow').innerHTML = `
+    <span class="sd-meta-pill"><span class="icon">◆</span>${s.day} ${s.month}</span>
+    <span class="sd-meta-pill"><span class="icon">◆</span>${s.time}</span>
+    <span class="sd-meta-pill"><span class="icon">◆</span>Up to ${s.maxSpots} people</span>
+    <span class="sd-price-badge">${s.price}</span>`;
+
+  // Action bar
+  const spotsClass = s.spots === 0 ? 'full' : s.spots <= 3 ? 'low' : 'ok';
+  const spotsLabel = s.spots === 0 ? 'Fully Booked' : s.spots <= 3 ? `Only ${s.spots} left!` : `${s.spots} spots available`;
+  document.getElementById('sdSpotsBadge').textContent = spotsLabel;
+  document.getElementById('sdSpotsBadge').className = `sd-spots-badge ${spotsClass}`;
+  const bookBtn = document.getElementById('sdBookBtn');
+  bookBtn.disabled = s.spots === 0;
+  bookBtn.textContent = s.spots === 0 ? 'Fully Booked' : 'Book Now →';
+
+  // Save button state
+  updateSaveButton(id);
+
+  // Description
+  const desc = s.description || `A ${s.category} session led by ${s.instructor}. All skill levels welcome — materials are provided and no experience is necessary.`;
+  const paras = desc.split('\n\n').filter(Boolean);
+  document.getElementById('sdDescription').innerHTML = paras.map(p => `<p>${p}</p>`).join('');
+  const includes = s.includes || ['All materials provided','Expert instruction','Take-home piece','Refreshments'];
+  document.getElementById('sdIncludes').innerHTML = includes.map(item => `<div class="sd-include-item">${item}</div>`).join('');
+
+  // Instructor
+  const instructor = instructors.find(i => i.name === s.instructor);
+  if (instructor) {
+    document.getElementById('sdInstructor').innerHTML = `
+      <div class="sd-instructor-img">
+        ${instructor.photo
+          ? `<img src="${instructor.photo}" alt="${instructor.name}">`
+          : `<div class="sd-instructor-placeholder" style="background:${instructor.gradient}">${instructor.initials}</div>`}
+      </div>
+      <div>
+        <div class="sd-instructor-name">${instructor.name}</div>
+        <div class="sd-instructor-role">${instructor.role}</div>
+        <div class="sd-instructor-bio">${instructor.bio}</div>
+      </div>`;
+  } else {
+    document.getElementById('sdInstructor').innerHTML = `<div style="font-style:italic;color:var(--muted);font-size:0.9rem">Instructor details coming soon.</div>`;
+  }
+
+  // Gallery thumbnails
+  const images = s.galleryImages && s.galleryImages.length > 0 ? s.galleryImages : null;
+  const thumbGrads = [
+    `linear-gradient(135deg,${grad.match(/#[0-9a-f]+/gi)?.[0]||'#e8177a'},${grad.match(/#[0-9a-f]+/gi)?.[1]||'#a8105a'})`,
+    'linear-gradient(135deg,#8aaa7a,#3d5c32)',
+    'linear-gradient(135deg,#d4a843,#8b6a1a)',
+    'linear-gradient(135deg,#2e3b4e,#0f0e0c)',
+    'linear-gradient(135deg,#5e3a6e,#2e1a3e)'
+  ];
+  const thumbSymbols = ['◈','◆','◇','☽','❋'];
+  const thumbCount = images ? images.length : 5;
+  document.getElementById('sdGalleryGrid').innerHTML = Array.from({length: thumbCount}, (_, ti) => {
+    const hasImg = images && images[ti];
+    return `<div class="sd-gallery-thumb" onclick="openLightbox(${ti}, ${id})">
+      <div class="sd-gallery-thumb-inner" style="${hasImg ? '' : `background:${thumbGrads[ti % thumbGrads.length]}`}">
+        ${hasImg ? `<img src="${images[ti]}" style="width:100%;height:100%;object-fit:cover">` : thumbSymbols[ti % thumbSymbols.length]}
+      </div>
+      <div class="sd-gallery-expand">Expand</div>
+    </div>`;
+  }).join('');
+
+  // Reviews
+  const reviews = s.reviews || [];
+  if (reviews.length > 0) {
+    const avg = (reviews.reduce((a, r) => a + r.stars, 0) / reviews.length).toFixed(1);
+    const stars = n => '★'.repeat(Math.round(n)) + '☆'.repeat(5 - Math.round(n));
+    document.getElementById('sdReviewAvg').innerHTML = `
+      <div class="sd-review-avg-score">${avg}</div>
+      <div>
+        <div style="color:var(--gold);font-size:1.1rem;letter-spacing:0.1em;margin-bottom:0.3rem">${stars(avg)}</div>
+        <div class="sd-review-avg-detail">${reviews.length} review${reviews.length !== 1 ? 's' : ''}</div>
+      </div>`;
+    document.getElementById('sdReviews').innerHTML = reviews.map(r => `
+      <div class="sd-review">
+        <div class="sd-review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+        <div class="sd-review-text">"${r.text}"</div>
+        <div class="sd-review-author">${r.author} &nbsp;·&nbsp; ${r.date}</div>
+      </div>`).join('');
+  } else {
+    document.getElementById('sdReviewAvg').innerHTML = '';
+    document.getElementById('sdReviews').innerHTML = `<p style="font-style:italic;color:var(--muted);font-size:0.9rem">No reviews yet — be the first to book!</p>`;
+  }
+
+  // Open overlay
+  const overlay = document.getElementById('sdOverlay');
+  overlay.classList.add('open');
+  overlay.scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSessionDetail() {
+  document.getElementById('sdOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentSessionId = null;
+}
+
+document.getElementById('sdOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeSessionDetail();
+});
+
+function sdBookNow() {
+  const sessions = getData('sessions');
+  const s = sessions.find(x => x.id === currentSessionId);
+  if (!s || s.spots === 0) return;
+  closeSessionDetail();
+  setTimeout(() => {
+    openModal(s.title, `${s.day} ${s.month} · ${s.time} · ${s.price}`);
+  }, 150);
+}
+
+// ── WISHLIST ──────────────────────────────────────────────────────────────────
+function getWishlist() { try { return JSON.parse(localStorage.getItem('mks_wishlist') || '[]'); } catch(e) { return []; } }
+function setWishlist(list) { localStorage.setItem('mks_wishlist', JSON.stringify(list)); }
+
+function toggleSave() {
+  if (!currentSessionId) return;
+  const list = getWishlist();
+  const idx = list.indexOf(currentSessionId);
+  if (idx >= 0) list.splice(idx, 1); else list.push(currentSessionId);
+  setWishlist(list);
+  updateSaveButton(currentSessionId);
+}
+
+function updateSaveButton(id) {
+  const saved = getWishlist().includes(id);
+  const btn = document.getElementById('sdSaveBtn');
+  btn.classList.toggle('saved', saved);
+  btn.title = saved ? 'Saved to wishlist' : 'Save to wishlist';
+  btn.innerHTML = saved ? '♥' : '♡';
+}
+
+// ── LIGHTBOX ──────────────────────────────────────────────────────────────────
+function openLightbox(thumbIdx, sessionId) {
+  const sessions = getData('sessions');
+  const s = sessions.find(x => x.id === sessionId);
+  const images = s && s.galleryImages && s.galleryImages.length > 0 ? s.galleryImages : null;
+  const thumbGrads = [
+    'linear-gradient(135deg,#e8177a,#a8105a)',
+    'linear-gradient(135deg,#8aaa7a,#3d5c32)',
+    'linear-gradient(135deg,#d4a843,#8b6a1a)',
+    'linear-gradient(135deg,#2e3b4e,#0f0e0c)',
+    'linear-gradient(135deg,#5e3a6e,#2e1a3e)'
+  ];
+  const thumbSymbols = ['◈','◆','◇','☽','❋'];
+  const inner = document.getElementById('sdLightboxInner');
+  if (images && images[thumbIdx]) {
+    inner.innerHTML = `<img src="${images[thumbIdx]}" alt="Studio image">`;
+  } else {
+    inner.innerHTML = `<div class="sd-lb-placeholder" style="background:${thumbGrads[thumbIdx % thumbGrads.length]}">${thumbSymbols[thumbIdx % thumbSymbols.length]}</div>`;
+  }
+  document.getElementById('sdLightbox').classList.add('open');
+}
+function closeLightbox() { document.getElementById('sdLightbox').classList.remove('open'); }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(title, meta) {
+  const overlay = document.getElementById('bookingModal');
+  const formWrapper = document.getElementById('bookingFormWrapper');
+  const successMsg = document.getElementById('bookingSuccess');
+  if (!overlay) return;
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalMeta').textContent = meta;
+  overlay.classList.add('open');
+  if (formWrapper) formWrapper.style.display = 'block';
+  if (successMsg) successMsg.style.display = 'none';
+  prefillBookingForm();
+}
+function closeModal() {
+  const overlay = document.getElementById('bookingModal');
+  if (overlay) overlay.classList.remove('open');
+}
+function confirmBooking() {
+  const formWrapper = document.getElementById('bookingFormWrapper');
+  const successMsg = document.getElementById('bookingSuccess');
+  if (formWrapper) formWrapper.style.display = 'none';
+  if (successMsg) successMsg.style.display = 'block';
+}
+document.addEventListener('DOMContentLoaded', function() {
+  const bookingModal = document.getElementById('bookingModal');
+  if (bookingModal) {
+    bookingModal.addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+  }
+});
+
+// ── SIGNUP ────────────────────────────────────────────────────────────────────
+function submitSignup() { document.getElementById('signupFormWrapper').style.display = 'none'; document.getElementById('signupSuccess').style.display = 'block'; }
+
+// ── FADE IN ───────────────────────────────────────────────────────────────────
+function animateFadeIns() {
+  const els = document.querySelectorAll('.fade-in:not(.visible)');
+  const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+  els.forEach(el => obs.observe(el));
+}
+
+// ── AUTHENTICATION ────────────────────────────────────────────────────────────
+const AUTH_SALT_ROUNDS = 10;
+
+// Secure user storage
+function getUsersDB() {
+  try { return JSON.parse(localStorage.getItem('mks_users') || '{}'); }
+  catch(e) { return {}; }
+}
+function setUsersDB(users) { localStorage.setItem('mks_users', JSON.stringify(users)); }
+
+function getCurrentUser() {
+  try { return JSON.parse(localStorage.getItem('mks_currentUser') || 'null'); }
+  catch(e) { return null; }
+}
+function setCurrentUser(user) {
+  if (user) localStorage.setItem('mks_currentUser', JSON.stringify(user));
+  else localStorage.removeItem('mks_currentUser');
+  updateAuthUI();
+}
+
+function hashPassword(password) {
+  return bcrypt.hashSync(password, AUTH_SALT_ROUNDS);
+}
+function comparePassword(password, hash) {
+  return bcrypt.compareSync(password, hash);
+}
+
+// Auth modal controls
+function openAuth(tab = 'login') {
+  document.getElementById('authOverlay').classList.add('open');
+  switchAuthTab(tab);
+}
+function closeAuth() {
+  document.getElementById('authOverlay').classList.remove('open');
+  clearAuthErrors();
+}
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  document.querySelector(`.auth-tab[onclick*="'${tab}'"]`).classList.add('active');
+  document.getElementById(tab + 'Form').classList.add('active');
+  if (tab === 'login') {
+    document.getElementById('authTitle').textContent = 'Sign In';
+    document.getElementById('authSubtitle').textContent = 'access your bookings';
+  } else {
+    document.getElementById('authTitle').textContent = 'Create Account';
+    document.getElementById('authSubtitle').textContent = 'join our community';
+  }
+  clearAuthErrors();
+}
+function clearAuthErrors() {
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('signupError').classList.remove('show');
+}
+
+// Handle login
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+  const rememberMe = document.getElementById('rememberMe').checked;
+  const errorEl = document.getElementById('loginError');
+
+  try {
+    const users = getUsersDB();
+    const user = Object.values(users).find(u => u.email === email);
+
+    if (!user) {
+      errorEl.textContent = 'Email or password incorrect.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    const passwordMatch = await new Promise(resolve => {
+      setTimeout(() => resolve(comparePassword(password, user.passwordHash)), 0);
+    });
+
+    if (!passwordMatch) {
+      errorEl.textContent = 'Email or password incorrect.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    // Success
+    const userSession = { id: user.id, name: user.name, email: user.email, phone: user.phone, experience: user.experience };
+    if (rememberMe) userSession.rememberMe = true;
+    setCurrentUser(userSession);
+    closeAuth();
+    showToast(`Welcome back, ${user.name}!`);
+  } catch(err) {
+    errorEl.textContent = 'An error occurred. Please try again.';
+    errorEl.classList.add('show');
+  }
+}
+
+// Handle signup
+async function handleSignup(e) {
+  e.preventDefault();
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+  const password = document.getElementById('signupPassword').value;
+  const phone = document.getElementById('signupPhone').value.trim() || '';
+  const experience = document.getElementById('signupExperience').value;
+  const errorEl = document.getElementById('signupError');
+
+  if (typeof bcrypt === 'undefined') {
+    errorEl.textContent = 'Security library not loaded. Please refresh the page.';
+    errorEl.classList.add('show');
+    return;
+  }
+
+  try {
+    if (password.length < 8) {
+      errorEl.textContent = 'Password must be at least 8 characters.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    const users = getUsersDB();
+    if (Object.values(users).find(u => u.email === email)) {
+      errorEl.textContent = 'An account with this email already exists.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    // Hash password
+    const passwordHash = await new Promise(resolve => {
+      setTimeout(() => resolve(hashPassword(password)), 0);
+    });
+
+    const userId = 'user_' + Date.now();
+    const newUser = { id: userId, name, email, passwordHash, phone, experience, createdAt: new Date().toISOString() };
+    users[userId] = newUser;
+    setUsersDB(users);
+
+    // Auto-login
+    const userSession = { id: userId, name, email, phone, experience };
+    setCurrentUser(userSession);
+    closeAuth();
+    showToast(`Welcome to Making Space, ${name}!`);
+  } catch(err) {
+    errorEl.textContent = 'An error occurred. Please try again.';
+    errorEl.classList.add('show');
+  }
+}
+
+// OAuth signup (mocked)
+let _oauthProvider = null;
+
+function oauthSignup(provider) {
+  _oauthProvider = provider;
+  const modal = document.getElementById('oauthNameModal');
+  document.getElementById('oauthModalTitle').textContent =
+    `Continue with ${provider === 'google' ? 'Google' : 'Apple'}`;
+  document.getElementById('oauthNameInput').value = '';
+  document.getElementById('oauthNameError').textContent = '';
+  document.getElementById('oauthNameError').classList.remove('show');
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('oauthNameInput').focus(), 50);
+}
+
+function closeOauthModal() {
+  document.getElementById('oauthNameModal').classList.remove('open');
+  _oauthProvider = null;
+}
+
+async function confirmOauthSignup() {
+  const name = document.getElementById('oauthNameInput').value.trim();
+  const errorEl = document.getElementById('oauthNameError');
+  if (!name) {
+    errorEl.textContent = 'Please enter your name.';
+    errorEl.classList.add('show');
+    return;
+  }
+  const provider = _oauthProvider;
+  try {
+    const users = getUsersDB();
+    const oauthId = `${provider}_${Date.now()}`;
+    const email = `${provider}_${Date.now()}@makingspace.local`;
+    const userId = 'user_' + Date.now();
+    const newUser = {
+      id: userId, name, email,
+      oauthProvider: provider, oauthId,
+      phone: '', experience: 'Complete beginner',
+      createdAt: new Date().toISOString()
+    };
+    users[userId] = newUser;
+    setUsersDB(users);
+    const userSession = { id: userId, name, email, phone: '', experience: 'Complete beginner', oauthProvider: provider };
+    setCurrentUser(userSession);
+    closeOauthModal();
+    closeAuth();
+    showToast(`Welcome to Making Space, ${name}!`);
+  } catch(err) {
+    errorEl.textContent = 'Sign up failed. Please try again.';
+    errorEl.classList.add('show');
+  }
+}
+
+function handleLogout() {
+  setCurrentUser(null);
+  showToast('You have been logged out.');
+}
+
+function toggleAccountMenu() {
+  const dropdown = document.getElementById('accountDropdown');
+  dropdown.classList.toggle('open');
+}
+
+// Close account menu when clicking elsewhere
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('accountMenu');
+  if (menu && !menu.contains(e.target)) {
+    document.getElementById('accountDropdown').classList.remove('open');
+  }
+});
+
+// Update auth UI based on login state
+function updateAuthUI() {
+  const user = getCurrentUser();
+  const navSignIn = document.getElementById('navSignIn');
+  const accountMenu = document.getElementById('accountMenu');
+
+  if (user) {
+    navSignIn.style.display = 'none';
+    accountMenu.style.display = 'block';
+  } else {
+    navSignIn.style.display = 'block';
+    accountMenu.style.display = 'none';
+  }
+}
+
+// Pre-fill booking form with logged-in user
+function prefillBookingForm() {
+  const user = getCurrentUser();
+  if (!user) return;
+
+  const inputs = document.querySelectorAll('#bookingFormWrapper input, #bookingFormWrapper select');
+  if (inputs.length >= 5) {
+    inputs[0].value = user.name.split(' ')[0] || '';
+    inputs[1].value = user.name.split(' ').slice(1).join(' ') || '';
+    inputs[2].value = user.email || '';
+    inputs[3].value = user.phone || '';
+    inputs[4].value = user.experience || 'Complete beginner';
+  }
+}
+
+// Show profile page
+function renderProfile() {
+  const user = getCurrentUser();
+  if (!user) { showPage('home'); return; }
+
+  document.getElementById('profileName').textContent = user.name + "'s Profile";
+
+  // Account info
+  document.getElementById('profileDisplay').innerHTML = `
+    <div class="profile-info-row">
+      <span class="profile-info-label">Full Name</span>
+      <span class="profile-info-value">${user.name}</span>
+    </div>
+    <div class="profile-info-row">
+      <span class="profile-info-label">Email</span>
+      <span class="profile-info-value">${user.email}</span>
+    </div>
+    <div class="profile-info-row">
+      <span class="profile-info-label">Phone</span>
+      <span class="profile-info-value">${user.phone || '—'}</span>
+    </div>
+    <div class="profile-info-row">
+      <span class="profile-info-label">Experience Level</span>
+      <span class="profile-info-value">${user.experience || 'Not set'}</span>
+    </div>
+    ${!user.oauthProvider ? '<div class="profile-info-row"><span class="profile-info-label">Account Type</span><span class="profile-info-value">Email & Password</span></div>' : `<div class="profile-info-row"><span class="profile-info-label">Account Type</span><span class="profile-info-value">Signed in with ${user.oauthProvider.charAt(0).toUpperCase() + user.oauthProvider.slice(1)}</span></div>`}`;
+
+  // Wishlist
+  const wishlist = getWishlist();
+  const sessions = getData('sessions');
+  const wishlistSessions = sessions.filter(s => wishlist.includes(s.id));
+
+  if (wishlistSessions.length === 0) {
+    document.getElementById('profileWishlist').innerHTML = `<div class="empty-state">No saved sessions yet. <a href="#" onclick="showPage('sessions')" style="color:var(--pink)">Browse sessions →</a></div>`;
+  } else {
+    document.getElementById('profileWishlist').innerHTML = `<div class="wishlist-grid">${wishlistSessions.map(s => `
+      <div class="wishlist-item">
+        <div class="wishlist-item-title">${s.title}</div>
+        <div class="wishlist-item-meta">${s.day} ${s.month} · ${s.instructor}</div>
+        <button class="wishlist-item-btn" onclick="openSessionDetail(${s.id});showPage('sessions')">View Session</button>
+      </div>`).join('')}</div>`;
+  }
+}
+
+function editProfile() {
+  alert('Edit profile feature coming soon.');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderMarquee();
+renderFooter();
+animateFadeIns();
+updateAuthUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Making Space — Admin CMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0f0e0c;
+    --cream: #f5f0e8;
+    --pink: #e8177a;
+    --pink-dark: #a8105a;
+    --gold: #d4a843;
+    --sage: #8aaa7a;
+    --pale: #e8e2d6;
+    --muted: #7a756e;
+    --sidebar: #151412;
+    --card: #1e1c19;
+    --border: rgba(245,240,232,0.1);
+    --input-bg: rgba(245,240,232,0.05);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: 'DM Mono', monospace; background: var(--ink); color: var(--cream); display: flex; font-size: 13px; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; min-height: 100vh; background: var(--sidebar);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
+  }
+  .sidebar-logo {
+    padding: 1.8rem 1.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo h1 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.1em; color: var(--cream); }
+  .sidebar-logo p { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--pink); margin-top: 0.2rem; }
+  .sidebar-nav { flex: 1; padding: 1rem 0; }
+  .nav-section { padding: 1rem 1.5rem 0.5rem; font-size: 0.55rem; letter-spacing: 0.25em; text-transform: uppercase; color: rgba(245,240,232,0.3); }
+  .nav-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.75rem 1.5rem; cursor: pointer;
+    color: rgba(245,240,232,0.5); transition: all 0.2s;
+    font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+    border-left: 2px solid transparent;
+  }
+  .nav-item:hover { color: var(--cream); background: rgba(245,240,232,0.03); }
+  .nav-item.active { color: var(--cream); border-left-color: var(--pink); background: rgba(232,23,122,0.08); }
+  .nav-item .icon { font-size: 0.9rem; width: 16px; text-align: center; }
+  .sidebar-footer { padding: 1.5rem; border-top: 1px solid var(--border); }
+  .preview-btn {
+    display: block; width: 100%; padding: 0.7rem; background: var(--pink);
+    color: var(--cream); text-align: center; font-family: 'DM Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase;
+    text-decoration: none; cursor: pointer; border: none; transition: background 0.2s;
+  }
+  .preview-btn:hover { background: var(--pink-dark); }
+
+  /* MAIN */
+  .main { margin-left: 220px; flex: 1; min-height: 100vh; }
+  .topbar {
+    padding: 1.2rem 2rem; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--sidebar); position: sticky; top: 0; z-index: 5;
+  }
+  .topbar-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.08em; }
+  .topbar-actions { display: flex; gap: 0.75rem; }
+  .btn { padding: 0.55rem 1.2rem; font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--pink); color: var(--cream); }
+  .btn-primary:hover { background: var(--pink-dark); }
+  .btn-secondary { background: transparent; color: rgba(245,240,232,0.5); border: 1px solid var(--border); }
+  .btn-secondary:hover { color: var(--cream); border-color: rgba(245,240,232,0.3); }
+  .btn-danger { background: transparent; color: #e05555; border: 1px solid rgba(224,85,85,0.3); }
+  .btn-danger:hover { background: rgba(224,85,85,0.1); }
+  .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.58rem; }
+
+  /* PANELS */
+  .panel { display: none; padding: 2rem; }
+  .panel.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--card); border: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .card-title { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--pink); }
+  .card-body { padding: 1.5rem; }
+
+  /* FORM ELEMENTS */
+  .field-group { margin-bottom: 1.2rem; }
+  .field-group label { display: block; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(245,240,232,0.4); margin-bottom: 0.4rem; }
+  .field-group input, .field-group select, .field-group textarea {
+    width: 100%; padding: 0.65rem 0.85rem;
+    background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--cream); font-family: 'DM Mono', monospace; font-size: 0.75rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .field-group input:focus, .field-group select:focus, .field-group textarea:focus { border-color: var(--pink); }
+  .field-group select option { background: var(--card); }
+  .field-group textarea { resize: vertical; min-height: 80px; }
+  .field-row { display: grid; gap: 1rem; }
+  .field-row.col2 { grid-template-columns: 1fr 1fr; }
+  .field-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,240,232,0.3); padding: 0.6rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+  .data-table td { padding: 0.85rem 1rem; border-bottom: 1px solid rgba(245,240,232,0.05); font-size: 0.72rem; color: rgba(245,240,232,0.8); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(245,240,232,0.02); }
+
+  /* TAGS */
+  .tag { display: inline-block; padding: 0.2rem 0.6rem; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; }
+  .tag-pink { background: rgba(232,23,122,0.15); color: var(--pink); }
+  .tag-sage { background: rgba(138,170,122,0.15); color: var(--sage); }
+  .tag-gold { background: rgba(212,168,67,0.15); color: var(--gold); }
+  .tag-muted { background: rgba(122,117,110,0.15); color: var(--muted); }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); padding: 1.5rem; }
+  .stat-label { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(245,240,232,0.35); margin-bottom: 0.5rem; }
+  .stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: 0.06em; line-height: 1; }
+  .stat-value.pink { color: var(--pink); }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.sage { color: var(--sage); }
+  .stat-value.cream { color: var(--cream); }
+
+  /* PHOTO UPLOAD */
+  .photo-upload-area {
+    display: flex; align-items: flex-start; gap: 1.5rem; margin-bottom: 1.2rem;
+  }
+  .photo-preview {
+    width: 88px; height: 88px; border-radius: 4px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; border: 1px solid var(--border); position: relative;
+  }
+  .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-preview-placeholder {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; color: rgba(245,240,232,0.3);
+  }
+  .photo-upload-controls { flex: 1; }
+  .photo-upload-controls label { display: block; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(245,240,232,0.4); margin-bottom: 0.5rem; }
+  .photo-upload-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.55rem 1rem; background: var(--input-bg);
+    border: 1px dashed rgba(245,240,232,0.2); color: rgba(245,240,232,0.6);
+    font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.12em;
+    text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  }
+  .photo-upload-btn:hover { border-color: var(--pink); color: var(--cream); }
+  .photo-upload-hint { font-size: 0.58rem; color: rgba(245,240,232,0.25); margin-top: 0.5rem; letter-spacing: 0.08em; }
+  .photo-remove-btn {
+    margin-top: 0.5rem; display: none;
+    background: none; border: none; color: #e05555;
+    font-family: 'DM Mono', monospace; font-size: 0.6rem;
+    letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer;
+    padding: 0;
+  }
+  .photo-remove-btn:hover { text-decoration: underline; }
+
+  /* COLOUR PICKER ROW */
+  .gradient-picker { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+  .grad-opt {
+    width: 36px; height: 36px; border-radius: 3px; cursor: pointer;
+    border: 2px solid transparent; transition: border-color 0.2s;
+  }
+  .grad-opt.selected { border-color: var(--cream); }
+
+  /* SAVE TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--sage); color: var(--ink);
+    padding: 0.75rem 1.5rem; font-size: 0.68rem; letter-spacing: 0.12em;
+    text-transform: uppercase; z-index: 999;
+    transform: translateY(100px); opacity: 0; transition: all 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* TOGGLE */
+  .toggle { position: relative; display: inline-block; width: 36px; height: 20px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: rgba(245,240,232,0.1); transition: 0.3s; border-radius: 20px;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute;
+    width: 14px; height: 14px; left: 3px; bottom: 3px;
+    background: var(--muted); border-radius: 50%; transition: 0.3s;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--pink); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--cream); }
+
+  /* INLINE EDIT INDICATOR */
+  .edited-badge { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-left: 0.5rem; }
+
+  /* SECTION DIVIDER */
+  .section-label {
+    font-size: 0.58rem; letter-spacing: 0.25em; text-transform: uppercase;
+    color: rgba(245,240,232,0.25); padding: 1rem 0 0.5rem;
+    border-top: 1px solid var(--border); margin-top: 1.5rem;
+  }
+  .section-label:first-child { border-top: none; margin-top: 0; padding-top: 0; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Making Space</h1>
+    <p>Admin CMS</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="showPanel('dashboard')"><span class="icon">◈</span> Dashboard</div>
+    <div class="nav-section">Content</div>
+    <div class="nav-item" onclick="showPanel('sessions')"><span class="icon">◆</span> Sessions</div>
+    <div class="nav-item" onclick="showPanel('instructors')"><span class="icon">◇</span> Instructors</div>
+    <div class="nav-item" onclick="showPanel('gallery')"><span class="icon">❋</span> Gallery</div>
+    <div class="nav-section">Settings</div>
+    <div class="nav-item" onclick="showPanel('siteinfo')"><span class="icon">✦</span> Site Info</div>
+    <div class="nav-item" onclick="showPanel('disciplines')"><span class="icon">☽</span> Disciplines</div>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="preview-btn" onclick="openPreview()">↗ Preview Site</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <span class="topbar-title" id="topbarTitle">Dashboard</span>
+    <div class="topbar-actions" id="topbarActions"></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="panel-dashboard" class="panel active">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Upcoming Sessions</span></div>
+        <div class="card-body" id="dashSessions"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Instructor Roster</span></div>
+        <div class="card-body" id="dashInstructors"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SESSIONS PANEL -->
+  <div id="panel-sessions" class="panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">All Sessions</span>
+        <button class="btn btn-primary btn-sm" onclick="openSessionForm()">+ Add Session</button>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="data-table" id="sessionsTable"></table>
+      </div>
+    </div>
+    <div class="card" id="sessionFormCard" style="display:none">
+      <div class="card-header">
+        <span class="card-title" id="sessionFormTitle">New Session</span>
+        <button class="btn btn-secondary btn-sm" onclick="closeSessionForm()">Cancel</button>
+      </div>
+      <div class="card-body" id="sessionFormBody"></div>
+    </div>
+  </div>
+
+  <!-- INSTRUCTORS PANEL -->
+  <div id="panel-instructors" class="panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Instructor Roster</span>
+        <button class="btn btn-primary btn-sm" onclick="openInstructorForm()">+ Add Instructor</button>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="data-table" id="instructorsTable"></table>
+      </div>
+    </div>
+    <div class="card" id="instructorFormCard" style="display:none">
+      <div class="card-header">
+        <span class="card-title" id="instructorFormTitle">New Instructor</span>
+        <button class="btn btn-secondary btn-sm" onclick="closeInstructorForm()">Cancel</button>
+      </div>
+      <div class="card-body" id="instructorFormBody"></div>
+    </div>
+  </div>
+
+  <!-- GALLERY PANEL -->
+  <div id="panel-gallery" class="panel">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Gallery Works</span>
+        <button class="btn btn-primary btn-sm" onclick="openGalleryForm()">+ Add Work</button>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="data-table" id="galleryTable"></table>
+      </div>
+    </div>
+    <div class="card" id="galleryFormCard" style="display:none">
+      <div class="card-header">
+        <span class="card-title" id="galleryFormTitle">New Work</span>
+        <button class="btn btn-secondary btn-sm" onclick="closeGalleryForm()">Cancel</button>
+      </div>
+      <div class="card-body" id="galleryFormBody"></div>
+    </div>
+  </div>
+
+  <!-- SITE INFO -->
+  <div id="panel-siteinfo" class="panel">
+    <div class="card" style="max-width:640px">
+      <div class="card-header"><span class="card-title">Site Information</span></div>
+      <div class="card-body" id="siteinfoForm"></div>
+    </div>
+  </div>
+
+  <!-- DISCIPLINES -->
+  <div id="panel-disciplines" class="panel">
+    <div class="card" style="max-width:480px">
+      <div class="card-header">
+        <span class="card-title">Workshop Disciplines</span>
+        <button class="btn btn-primary btn-sm" onclick="addDiscipline()">+ Add</button>
+      </div>
+      <div class="card-body" id="disciplinesList"></div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast">Changes saved</div>
+
+<script>
+// ── DEFAULTS (mirrors site) ───────────────────────────────────────────────────
+const DEFAULTS = {
+  siteInfo: { tagline:"A creative studio and workshop space for makers, artists, and curious hands.", address:"12 Kiln Lane, Chester, CH1 2AB", hours:"Mon–Sat, 9am – 8pm", email:"hello@makingspace.studio", instagram:"https://instagram.com/makingspacestudio", copyright:"© 2026 Making Space Studio" },
+  disciplines: ["Pottery","Painting","Drawing","Textiles","Printmaking","Sculpture"],
+  sessions: [
+    { id:1, title:"Introduction to Wheel Throwing", instructor:"Rosa Chen", category:"pottery", day:"2", month:"APR", time:"10:00 – 13:00", spots:4, maxSpots:12, price:"£65" },
+    { id:2, title:"Bold Colour — Acrylic Painting", instructor:"James Adeyemi", category:"painting", day:"5", month:"APR", time:"14:00 – 17:00", spots:8, maxSpots:12, price:"£55" },
+    { id:3, title:"Life Drawing Evening", instructor:"Mara Voss", category:"drawing", day:"8", month:"APR", time:"18:30 – 21:00", spots:2, maxSpots:12, price:"£40" },
+    { id:4, title:"Natural Dye & Weaving", instructor:"Tomoko Kaito", category:"textiles", day:"12", month:"APR", time:"10:00 – 16:00", spots:0, maxSpots:10, price:"£85" },
+    { id:5, title:"Linocut Printmaking", instructor:"Samuel Okonkwo", category:"printmaking", day:"15", month:"APR", time:"13:00 – 16:00", spots:6, maxSpots:12, price:"£50" },
+    { id:6, title:"Intermediate Glazing Workshop", instructor:"Rosa Chen", category:"pottery", day:"19", month:"APR", time:"10:00 – 14:00", spots:5, maxSpots:10, price:"£70" },
+    { id:7, title:"Sculpture with Found Objects", instructor:"Luisa Paredes", category:"sculpture", day:"22", month:"APR", time:"11:00 – 16:00", spots:3, maxSpots:10, price:"£75" },
+    { id:8, title:"Portrait Drawing Masterclass", instructor:"Mara Voss", category:"drawing", day:"26", month:"APR", time:"14:00 – 17:00", spots:7, maxSpots:12, price:"£55" }
+  ],
+  instructors: [
+    { id:1, initials:"RC", name:"Rosa Chen", role:"Lead Ceramicist", specialty:"Ceramics & Pottery", bio:"Rosa trained at the Royal College of Art and has exhibited across Europe.", gradient:"linear-gradient(135deg, #e8177a, #a8105a)" },
+    { id:2, initials:"JA", name:"James Adeyemi", role:"Painting Instructor", specialty:"Oil & Acrylic Painting", bio:"A self-taught painter turned gallery artist, James brings raw energy and bold colour theory to his workshops.", gradient:"linear-gradient(135deg, #3d5c32, #8aaa7a)" },
+    { id:3, initials:"MV", name:"Mara Voss", role:"Drawing & Illustration", specialty:"Life Drawing", bio:"Mara spent years as a figure drawing teacher in Berlin before making the UK her home.", gradient:"linear-gradient(135deg, #1a1a2e, #4a4a6e)" },
+    { id:4, initials:"TK", name:"Tomoko Kaito", role:"Textiles & Fibre Arts", specialty:"Textile & Weaving", bio:"Inspired by both traditional Japanese weaving and contemporary fibre art.", gradient:"linear-gradient(135deg, #d4a843, #a07820)" },
+    { id:5, initials:"SO", name:"Samuel Okonkwo", role:"Printmaking & Design", specialty:"Printmaking", bio:"Samuel's background in graphic design and relief printing fuses concept with craft.", gradient:"linear-gradient(135deg, #a8105a, #e8177a)" },
+    { id:6, initials:"LP", name:"Luisa Paredes", role:"Sculpture & 3D Art", specialty:"Sculpture & Mixed Media", bio:"Luisa works in stone, wire, and found objects — often all at once.", gradient:"linear-gradient(135deg, #2e3b4e, #5e7a9e)" }
+  ],
+  gallery: [
+    { id:1, title:"Earthen Form No. 3", artist:"Rosa Chen", price:"£280", forSale:true, symbol:"◈" },
+    { id:2, title:"Burn Season", artist:"James Adeyemi", price:"£450", forSale:true, symbol:"◆" },
+    { id:3, title:"Woven Light", artist:"Tomoko Kaito", price:"£320", forSale:true, symbol:"◇" },
+    { id:4, title:"Stance Study VII", artist:"Mara Voss", price:"", forSale:false, symbol:"☽" },
+    { id:5, title:"Press Run 001", artist:"Samuel Okonkwo", price:"£180", forSale:true, symbol:"❋" },
+    { id:6, title:"Fragment II", artist:"Luisa Paredes", price:"£640", forSale:true, symbol:"✶" },
+    { id:7, title:"Reduction Bowl", artist:"Rosa Chen", price:"£195", forSale:true, symbol:"❊" }
+  ]
+};
+
+const GRADIENTS = [
+  "linear-gradient(135deg, #e8177a, #a8105a)",
+  "linear-gradient(135deg, #3d5c32, #8aaa7a)",
+  "linear-gradient(135deg, #1a1a2e, #4a4a6e)",
+  "linear-gradient(135deg, #d4a843, #a07820)",
+  "linear-gradient(135deg, #a8105a, #e8177a)",
+  "linear-gradient(135deg, #2e3b4e, #5e7a9e)",
+  "linear-gradient(135deg, #8aaa7a, #3d5c32)",
+  "linear-gradient(135deg, #0f0e0c, #3a3630)"
+];
+
+// ── DATA LAYER ─────────────────────────────────────────────────────────────────
+function getData(key) { try { const v = localStorage.getItem('mks_' + key); return v ? JSON.parse(v) : JSON.parse(JSON.stringify(DEFAULTS[key])); } catch(e) { return JSON.parse(JSON.stringify(DEFAULTS[key])); } }
+function setData(key, val) { localStorage.setItem('mks_' + key, JSON.stringify(val)); showToast(); }
+function nextId(arr) { return arr.length ? Math.max(...arr.map(i => i.id)) + 1 : 1; }
+
+// ── TOAST ──────────────────────────────────────────────────────────────────────
+function showToast(msg = 'Changes saved') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────────
+const panelTitles = { dashboard:'Dashboard', sessions:'Sessions', instructors:'Instructors', gallery:'Gallery', siteinfo:'Site Info', disciplines:'Disciplines' };
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  document.getElementById('topbarTitle').textContent = panelTitles[id];
+  document.getElementById('topbarActions').innerHTML = '';
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'sessions') renderSessionsPanel();
+  if (id === 'instructors') renderInstructorsPanel();
+  if (id === 'gallery') renderGalleryPanel();
+  if (id === 'siteinfo') renderSiteInfo();
+  if (id === 'disciplines') renderDisciplines();
+}
+
+function openPreview() {
+  showToast('Opening preview...');
+  // In production this would open the site file
+  alert('In production, this would open makingspace-site.html in a new tab.\n\nAll changes you save here are stored and automatically loaded by the site file.');
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const sessions = getData('sessions');
+  const instructors = getData('instructors');
+  const gallery = getData('gallery');
+  const disciplines = getData('disciplines');
+  const forSale = gallery.filter(g => g.forSale).length;
+  const totalSpots = sessions.reduce((a, s) => a + s.spots, 0);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Active Sessions</div><div class="stat-value pink">${sessions.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Spots Available</div><div class="stat-value gold">${totalSpots}</div></div>
+    <div class="stat-card"><div class="stat-label">Instructors</div><div class="stat-value sage">${instructors.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Works For Sale</div><div class="stat-value cream">${forSale}</div></div>`;
+
+  document.getElementById('dashSessions').innerHTML = sessions.slice(0,5).map(s => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:0.72rem;color:var(--cream);margin-bottom:0.2rem">${s.title}</div>
+        <div style="font-size:0.6rem;color:var(--muted)">${s.day} ${s.month} · ${s.instructor}</div>
+      </div>
+      <span class="tag ${s.spots===0?'tag-pink':s.spots<=3?'tag-gold':'tag-sage'}">${s.spots===0?'Full':s.spots+' left'}</span>
+    </div>`).join('');
+
+  document.getElementById('dashInstructors').innerHTML = instructors.map(i => `
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+      <div style="width:32px;height:32px;border-radius:50%;overflow:hidden;flex-shrink:0;border:1px solid var(--border)">
+        ${i.photo
+          ? `<img src="${i.photo}" style="width:100%;height:100%;object-fit:cover;display:block">`
+          : `<div style="width:100%;height:100%;background:${i.gradient};display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:rgba(245,240,232,0.6)">${i.initials}</div>`
+        }
+      </div>
+      <div>
+        <div style="font-size:0.72rem;color:var(--cream)">${i.name}</div>
+        <div style="font-size:0.6rem;color:var(--muted)">${i.specialty}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── SESSIONS PANEL ─────────────────────────────────────────────────────────────
+let editingSession = null;
+function renderSessionsPanel() {
+  const sessions = getData('sessions');
+  document.getElementById('sessionsTable').innerHTML = `
+    <thead><tr>
+      <th>Date</th><th>Title</th><th>Instructor</th><th>Category</th><th>Spots</th><th>Price</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${sessions.map(s => `
+      <tr>
+        <td style="color:var(--pink)">${s.day} ${s.month}</td>
+        <td>${s.title}</td>
+        <td style="color:var(--muted)">${s.instructor}</td>
+        <td><span class="tag tag-muted">${s.category}</span></td>
+        <td><span class="tag ${s.spots===0?'tag-pink':s.spots<=3?'tag-gold':'tag-sage'}">${s.spots}/${s.maxSpots}</span></td>
+        <td>${s.price}</td>
+        <td style="display:flex;gap:0.4rem">
+          <button class="btn btn-secondary btn-sm" onclick="editSession(${s.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteSession(${s.id})">Del</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>`;
+}
+
+function sessionForm(s = {}) {
+  const disciplines = getData('disciplines');
+  const includes = (s.includes || ['All materials provided','Expert instruction','Take-home piece','Refreshments']).join('\n');
+  const reviewsJson = JSON.stringify(s.reviews || [], null, 2);
+  return `
+    <div class="section-label">Core Details</div>
+    <div class="field-row col2">
+      <div class="field-group"><label>Session Title</label><input id="sf-title" type="text" value="${(s.title||'').replace(/"/g,'&quot;')}" placeholder="e.g. Introduction to Wheel Throwing"></div>
+      <div class="field-group"><label>Instructor Name</label><input id="sf-instructor" type="text" value="${(s.instructor||'').replace(/"/g,'&quot;')}" placeholder="e.g. Rosa Chen"></div>
+    </div>
+    <div class="field-row col3">
+      <div class="field-group"><label>Day</label><input id="sf-day" type="text" value="${s.day||''}" placeholder="e.g. 12"></div>
+      <div class="field-group"><label>Month</label><input id="sf-month" type="text" value="${s.month||''}" placeholder="e.g. APR"></div>
+      <div class="field-group"><label>Time</label><input id="sf-time" type="text" value="${(s.time||'').replace(/"/g,'&quot;')}" placeholder="e.g. 10:00 – 13:00"></div>
+    </div>
+    <div class="field-row col3">
+      <div class="field-group"><label>Category</label>
+        <select id="sf-category">${disciplines.map(d => `<option value="${d.toLowerCase()}" ${s.category===d.toLowerCase()?'selected':''}>${d}</option>`).join('')}</select>
+      </div>
+      <div class="field-group"><label>Spots Remaining</label><input id="sf-spots" type="number" value="${s.spots!==undefined?s.spots:12}"></div>
+      <div class="field-group"><label>Max Spots</label><input id="sf-maxspots" type="number" value="${s.maxSpots||12}"></div>
+    </div>
+    <div class="field-row col2">
+      <div class="field-group"><label>Price (incl. £ symbol)</label><input id="sf-price" type="text" value="${s.price||''}" placeholder="e.g. £65"></div>
+    </div>
+
+    <div class="section-label">Session Detail Page</div>
+    <div class="field-group">
+      <label>Description (use blank lines to separate paragraphs)</label>
+      <textarea id="sf-description" style="min-height:140px" placeholder="What will participants do, learn, and take away? Set the scene — this is the main copy on the session detail page.">${(s.description||'').replace(/</g,'&lt;')}</textarea>
+    </div>
+    <div class="field-group">
+      <label>What's Included (one item per line)</label>
+      <textarea id="sf-includes" style="min-height:110px" placeholder="All materials provided&#10;Expert instruction&#10;Take-home piece&#10;Refreshments">${includes}</textarea>
+    </div>
+
+    <div class="section-label">Customer Reviews</div>
+    <div style="margin-bottom:1rem" id="reviewsEditor"></div>
+    <button class="btn btn-secondary btn-sm" onclick="addReviewRow()" style="margin-bottom:1.5rem">+ Add Review</button>
+    <input type="hidden" id="sf-reviews" value="">
+
+    <div class="section-label"></div>
+    <button class="btn btn-primary" onclick="saveSession()">${s.id ? 'Update Session' : 'Add Session'} →</button>`;
+}
+
+function initReviewsEditor(reviews) {
+  const container = document.getElementById('reviewsEditor');
+  if (!container) return;
+  container.innerHTML = '';
+  (reviews || []).forEach((r, i) => addReviewRow(r));
+}
+
+function addReviewRow(r = {}) {
+  const container = document.getElementById('reviewsEditor');
+  if (!container) return;
+  const idx = container.children.length;
+  const div = document.createElement('div');
+  div.className = 'review-row';
+  div.style.cssText = 'background:var(--input-bg);border:1px solid var(--border);padding:1rem;margin-bottom:0.5rem;position:relative';
+  div.innerHTML = `
+    <button onclick="this.parentElement.remove()" style="position:absolute;top:0.5rem;right:0.5rem;background:none;border:none;color:#e05555;cursor:pointer;font-size:0.8rem">✕</button>
+    <div class="field-row col3" style="margin-bottom:0.5rem">
+      <div class="field-group" style="margin:0"><label>Reviewer Name</label><input type="text" class="rv-author" value="${(r.author||'').replace(/"/g,'&quot;')}" placeholder="e.g. Sarah M."></div>
+      <div class="field-group" style="margin:0"><label>Stars (1–5)</label><input type="number" class="rv-stars" min="1" max="5" value="${r.stars||5}"></div>
+      <div class="field-group" style="margin:0"><label>Date</label><input type="text" class="rv-date" value="${r.date||''}" placeholder="e.g. March 2026"></div>
+    </div>
+    <div class="field-group" style="margin:0"><label>Review Text</label><textarea class="rv-text" style="min-height:60px">${(r.text||'').replace(/</g,'&lt;')}</textarea></div>`;
+  container.appendChild(div);
+}
+
+function openSessionForm() {
+  editingSession = null;
+  document.getElementById('sessionFormCard').style.display = 'block';
+  document.getElementById('sessionFormTitle').textContent = 'New Session';
+  document.getElementById('sessionFormBody').innerHTML = sessionForm();
+  initReviewsEditor([]);
+}
+function editSession(id) {
+  editingSession = id;
+  const s = getData('sessions').find(x => x.id === id);
+  document.getElementById('sessionFormCard').style.display = 'block';
+  document.getElementById('sessionFormTitle').textContent = 'Edit Session';
+  document.getElementById('sessionFormBody').innerHTML = sessionForm(s);
+  initReviewsEditor(s.reviews || []);
+}
+function closeSessionForm() { document.getElementById('sessionFormCard').style.display = 'none'; editingSession = null; }
+
+function saveSession() {
+  const sessions = getData('sessions');
+  // Collect reviews from dynamic rows
+  const reviewRows = document.querySelectorAll('.review-row');
+  const reviews = Array.from(reviewRows).map(row => ({
+    author: row.querySelector('.rv-author').value,
+    stars: parseInt(row.querySelector('.rv-stars').value) || 5,
+    date: row.querySelector('.rv-date').value,
+    text: row.querySelector('.rv-text').value
+  })).filter(r => r.author && r.text);
+  // Collect includes
+  const includesRaw = document.getElementById('sf-includes').value;
+  const includes = includesRaw.split('\n').map(l => l.trim()).filter(Boolean);
+  const newS = {
+    title: document.getElementById('sf-title').value,
+    instructor: document.getElementById('sf-instructor').value,
+    category: document.getElementById('sf-category').value,
+    day: document.getElementById('sf-day').value,
+    month: document.getElementById('sf-month').value.toUpperCase(),
+    time: document.getElementById('sf-time').value,
+    spots: parseInt(document.getElementById('sf-spots').value),
+    maxSpots: parseInt(document.getElementById('sf-maxspots').value),
+    price: document.getElementById('sf-price').value,
+    description: document.getElementById('sf-description').value,
+    includes,
+    reviews
+  };
+  if (editingSession) { const i = sessions.findIndex(s => s.id === editingSession); sessions[i] = { ...sessions[i], ...newS }; }
+  else { sessions.push({ id: nextId(sessions), ...newS }); }
+  setData('sessions', sessions); closeSessionForm(); renderSessionsPanel();
+}
+function deleteSession(id) { if (!confirm('Delete this session?')) return; const s = getData('sessions').filter(x => x.id !== id); setData('sessions', s); renderSessionsPanel(); }
+
+// ── INSTRUCTORS PANEL ──────────────────────────────────────────────────────────
+let editingInstructor = null;
+function renderInstructorsPanel() {
+  const instructors = getData('instructors');
+  document.getElementById('instructorsTable').innerHTML = `
+    <thead><tr><th>Avatar</th><th>Name</th><th>Role</th><th>Specialty</th><th>Actions</th></tr></thead>
+    <tbody>${instructors.map(i => `
+      <tr>
+        <td>${i.photo
+          ? `<img src="${i.photo}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;display:block">`
+          : `<div style="width:32px;height:32px;border-radius:50%;background:${i.gradient};display:flex;align-items:center;justify-content:center;font-size:0.6rem">${i.initials}</div>`
+        }</td>
+        <td>${i.name}</td>
+        <td style="color:var(--pink)">${i.role}</td>
+        <td style="color:var(--muted)">${i.specialty}</td>
+        <td style="display:flex;gap:0.4rem">
+          <button class="btn btn-secondary btn-sm" onclick="editInstructor(${i.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteInstructor(${i.id})">Del</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>`;
+}
+
+function instructorForm(i = {}) {
+  const hasPhoto = !!i.photo;
+  return `
+    <div class="field-row col2">
+      <div class="field-group"><label>Full Name</label><input id="if-name" type="text" value="${i.name||''}" placeholder="e.g. Rosa Chen"></div>
+      <div class="field-group"><label>Initials (fallback if no photo)</label><input id="if-initials" type="text" value="${i.initials||''}" placeholder="e.g. RC" maxlength="3"></div>
+    </div>
+    <div class="field-row col2">
+      <div class="field-group"><label>Role / Title</label><input id="if-role" type="text" value="${i.role||''}" placeholder="e.g. Lead Ceramicist"></div>
+      <div class="field-group"><label>Specialty Tag</label><input id="if-specialty" type="text" value="${i.specialty||''}" placeholder="e.g. Ceramics & Pottery"></div>
+    </div>
+    <div class="field-group"><label>Biography</label><textarea id="if-bio" placeholder="A short bio for the instructors page...">${i.bio||''}</textarea></div>
+
+    <div class="field-group">
+      <label>Profile Photo</label>
+      <div class="photo-upload-area">
+        <div class="photo-preview" id="photoPreview">
+          ${hasPhoto
+            ? `<img id="photoPreviewImg" src="${i.photo}" alt="Profile photo">`
+            : `<div class="photo-preview-placeholder" id="photoPreviewPlaceholder" style="background:${i.gradient||GRADIENTS[0]}">${i.initials||'?'}</div>`
+          }
+        </div>
+        <div class="photo-upload-controls">
+          <label>Upload image (JPG, PNG, WebP — max 2MB)</label>
+          <label class="photo-upload-btn" for="photoFileInput">
+            ↑ Choose photo
+          </label>
+          <input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="handlePhotoUpload(this)">
+          <div class="photo-upload-hint">Photo will be cropped to fill a square. If no photo is uploaded, the gradient + initials avatar is used instead.</div>
+          <button class="photo-remove-btn" id="photoRemoveBtn" style="display:${hasPhoto?'block':'none'}" onclick="removePhoto()">✕ Remove photo</button>
+        </div>
+      </div>
+      <input type="hidden" id="if-photo" value="${i.photo||''}">
+    </div>
+
+    <div class="field-group" id="gradientSection" style="${hasPhoto?'opacity:0.4;pointer-events:none':''}">
+      <label>Fallback Avatar Gradient ${hasPhoto?'<span style="color:var(--muted);font-size:0.55rem">(hidden while photo is set)</span>':''}</label>
+      <div class="gradient-picker" id="gradientPicker">
+        ${GRADIENTS.map((g, idx) => `<div class="grad-opt ${i.gradient===g?'selected':''}" style="background:${g}" onclick="selectGradient(${idx})" title="Gradient ${idx+1}"></div>`).join('')}
+      </div>
+      <input type="hidden" id="if-gradient" value="${i.gradient||GRADIENTS[0]}">
+    </div>
+    <button class="btn btn-primary" onclick="saveInstructor()">${i.id ? 'Update Instructor' : 'Add Instructor'} →</button>`;
+}
+
+function handlePhotoUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB. Please resize it and try again.'); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    document.getElementById('if-photo').value = dataUrl;
+    // Update preview
+    const preview = document.getElementById('photoPreview');
+    preview.innerHTML = `<img id="photoPreviewImg" src="${dataUrl}" alt="Profile photo" style="width:100%;height:100%;object-fit:cover">`;
+    // Show remove btn, dim gradient section
+    document.getElementById('photoRemoveBtn').style.display = 'block';
+    document.getElementById('gradientSection').style.opacity = '0.4';
+    document.getElementById('gradientSection').style.pointerEvents = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto() {
+  document.getElementById('if-photo').value = '';
+  document.getElementById('photoFileInput').value = '';
+  // Restore placeholder
+  const i_initials = document.getElementById('if-initials').value || '?';
+  const gradient = document.getElementById('if-gradient').value || GRADIENTS[0];
+  document.getElementById('photoPreview').innerHTML = `<div class="photo-preview-placeholder" style="background:${gradient}">${i_initials}</div>`;
+  document.getElementById('photoRemoveBtn').style.display = 'none';
+  document.getElementById('gradientSection').style.opacity = '1';
+  document.getElementById('gradientSection').style.pointerEvents = 'auto';
+}
+
+function selectGradient(idx) {
+  document.querySelectorAll('.grad-opt').forEach((el, i) => el.classList.toggle('selected', i === idx));
+  document.getElementById('if-gradient').value = GRADIENTS[idx];
+  // Also update placeholder preview if no photo
+  if (!document.getElementById('if-photo').value) {
+    const placeholder = document.querySelector('.photo-preview-placeholder');
+    if (placeholder) placeholder.style.background = GRADIENTS[idx];
+  }
+}
+function openInstructorForm() { editingInstructor = null; document.getElementById('instructorFormCard').style.display = 'block'; document.getElementById('instructorFormTitle').textContent = 'New Instructor'; document.getElementById('instructorFormBody').innerHTML = instructorForm(); }
+function editInstructor(id) { editingInstructor = id; const i = getData('instructors').find(x => x.id === id); document.getElementById('instructorFormCard').style.display = 'block'; document.getElementById('instructorFormTitle').textContent = 'Edit Instructor'; document.getElementById('instructorFormBody').innerHTML = instructorForm(i); }
+function closeInstructorForm() { document.getElementById('instructorFormCard').style.display = 'none'; editingInstructor = null; }
+function saveInstructor() {
+  const instructors = getData('instructors');
+  const newI = { name: document.getElementById('if-name').value, initials: document.getElementById('if-initials').value, role: document.getElementById('if-role').value, specialty: document.getElementById('if-specialty').value, bio: document.getElementById('if-bio').value, gradient: document.getElementById('if-gradient').value, photo: document.getElementById('if-photo').value || '' };
+  if (editingInstructor) { const idx = instructors.findIndex(i => i.id === editingInstructor); instructors[idx] = { ...instructors[idx], ...newI }; }
+  else { instructors.push({ id: nextId(instructors), ...newI }); }
+  setData('instructors', instructors); closeInstructorForm(); renderInstructorsPanel();
+}
+function deleteInstructor(id) { if (!confirm('Remove this instructor?')) return; const arr = getData('instructors').filter(x => x.id !== id); setData('instructors', arr); renderInstructorsPanel(); }
+
+// ── GALLERY PANEL ──────────────────────────────────────────────────────────────
+let editingGallery = null;
+function renderGalleryPanel() {
+  const gallery = getData('gallery');
+  document.getElementById('galleryTable').innerHTML = `
+    <thead><tr><th>Symbol</th><th>Title</th><th>Artist</th><th>Price</th><th>For Sale</th><th>Actions</th></tr></thead>
+    <tbody>${gallery.map(g => `
+      <tr>
+        <td style="font-size:1.5rem">${g.symbol}</td>
+        <td>${g.title}</td>
+        <td style="color:var(--muted)">${g.artist}</td>
+        <td style="color:var(--gold)">${g.price || '—'}</td>
+        <td><span class="tag ${g.forSale?'tag-sage':'tag-muted'}">${g.forSale?'For Sale':'Display'}</span></td>
+        <td style="display:flex;gap:0.4rem">
+          <button class="btn btn-secondary btn-sm" onclick="editGallery(${g.id})">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteGallery(${g.id})">Del</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>`;
+}
+
+const SYMBOLS = ['◈','◆','◇','☽','❋','✶','❊','✦','❖','◉','✿','❀'];
+function galleryForm(g = {}) {
+  return `
+    <div class="field-row col2">
+      <div class="field-group"><label>Work Title</label><input id="gf-title" type="text" value="${g.title||''}" placeholder="e.g. Earthen Form No. 3"></div>
+      <div class="field-group"><label>Artist Name</label><input id="gf-artist" type="text" value="${g.artist||''}" placeholder="e.g. Rosa Chen"></div>
+    </div>
+    <div class="field-row col2">
+      <div class="field-group"><label>Price (leave blank if not for sale)</label><input id="gf-price" type="text" value="${g.price||''}" placeholder="e.g. £280"></div>
+      <div class="field-group"><label>Display Symbol</label>
+        <select id="gf-symbol">${SYMBOLS.map(s => `<option value="${s}" ${g.symbol===s?'selected':''}>${s} — ${s}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="field-group" style="display:flex;align-items:center;gap:1rem">
+      <label style="margin:0">For Sale</label>
+      <label class="toggle"><input type="checkbox" id="gf-forsale" ${g.forSale?'checked':''}><span class="toggle-slider"></span></label>
+    </div>
+    <button class="btn btn-primary" style="margin-top:1rem" onclick="saveGallery()">${g.id ? 'Update Work' : 'Add Work'} →</button>`;
+}
+
+function openGalleryForm() { editingGallery = null; document.getElementById('galleryFormCard').style.display = 'block'; document.getElementById('galleryFormTitle').textContent = 'New Work'; document.getElementById('galleryFormBody').innerHTML = galleryForm(); }
+function editGallery(id) { editingGallery = id; const g = getData('gallery').find(x => x.id === id); document.getElementById('galleryFormCard').style.display = 'block'; document.getElementById('galleryFormTitle').textContent = 'Edit Work'; document.getElementById('galleryFormBody').innerHTML = galleryForm(g); }
+function closeGalleryForm() { document.getElementById('galleryFormCard').style.display = 'none'; editingGallery = null; }
+function saveGallery() {
+  const gallery = getData('gallery');
+  const newG = { title: document.getElementById('gf-title').value, artist: document.getElementById('gf-artist').value, price: document.getElementById('gf-price').value, symbol: document.getElementById('gf-symbol').value, forSale: document.getElementById('gf-forsale').checked };
+  if (editingGallery) { const i = gallery.findIndex(g => g.id === editingGallery); gallery[i] = { ...gallery[i], ...newG }; }
+  else { gallery.push({ id: nextId(gallery), ...newG }); }
+  setData('gallery', gallery); closeGalleryForm(); renderGalleryPanel();
+}
+function deleteGallery(id) { if (!confirm('Remove this work?')) return; const arr = getData('gallery').filter(x => x.id !== id); setData('gallery', arr); renderGalleryPanel(); }
+
+// ── SITE INFO ──────────────────────────────────────────────────────────────────
+function renderSiteInfo() {
+  const info = getData('siteInfo');
+  document.getElementById('siteinfoForm').innerHTML = `
+    <div class="field-group"><label>Studio Tagline</label><input id="si-tagline" type="text" value="${info.tagline}"></div>
+    <div class="field-group"><label>Address</label><input id="si-address" type="text" value="${info.address}"></div>
+    <div class="field-group"><label>Opening Hours (e.g. Mon–Sat, 9am – 8pm)</label><input id="si-hours" type="text" value="${info.hours}"></div>
+    <div class="field-row col2">
+      <div class="field-group"><label>Contact Email</label><input id="si-email" type="email" value="${info.email}"></div>
+      <div class="field-group"><label>Instagram URL</label><input id="si-instagram" type="text" value="${info.instagram}"></div>
+    </div>
+    <div class="field-group"><label>Footer Copyright Text</label><input id="si-copyright" type="text" value="${info.copyright}"></div>
+    <button class="btn btn-primary" onclick="saveSiteInfo()">Save Site Info →</button>`;
+}
+function saveSiteInfo() {
+  setData('siteInfo', { tagline: document.getElementById('si-tagline').value, address: document.getElementById('si-address').value, hours: document.getElementById('si-hours').value, email: document.getElementById('si-email').value, instagram: document.getElementById('si-instagram').value, copyright: document.getElementById('si-copyright').value });
+}
+
+// ── DISCIPLINES ────────────────────────────────────────────────────────────────
+function renderDisciplines() {
+  const disciplines = getData('disciplines');
+  document.getElementById('disciplinesList').innerHTML = disciplines.map((d, i) => `
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--border);">
+      <input type="text" value="${d}" id="disc-${i}" style="flex:1;padding:0.5rem 0.75rem;background:var(--input-bg);border:1px solid var(--border);color:var(--cream);font-family:'DM Mono',monospace;font-size:0.72rem;outline:none" onchange="updateDiscipline(${i}, this.value)">
+      <button class="btn btn-danger btn-sm" onclick="deleteDiscipline(${i})">✕</button>
+    </div>`).join('') + `<div style="padding-top:1rem;color:var(--muted);font-size:0.6rem;letter-spacing:0.12em">Disciplines appear as session categories and filter buttons on the site.</div>`;
+}
+function addDiscipline() { const d = getData('disciplines'); d.push('New Discipline'); setData('disciplines', d); renderDisciplines(); }
+function updateDiscipline(i, val) { const d = getData('disciplines'); d[i] = val; setData('disciplines', d); }
+function deleteDiscipline(i) { if (!confirm('Remove this discipline?')) return; const d = getData('disciplines'); d.splice(i, 1); setData('disciplines', d); renderDisciplines(); }
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+renderDashboard();
+</script>
+</body>
+</html>
