@@ -1529,17 +1529,26 @@ function showToast(msg) {
 sb.auth.onAuthStateChange(async (event, session) => {
   currentUser = session ? session.user : null;
   updateAuthUI();
+
   if (event === 'SIGNED_IN') {
-    renderProfile();
+    // Clean the OAuth token hash from the URL bar
+    if (window.location.hash.includes('access_token')) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      const name = currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || '';
+      showToast(`Welcome${name ? ', ' + name.split(' ')[0] : ''}!`);
+    }
+    await renderProfile();
+  }
+
+  if (event === 'SIGNED_OUT') {
+    await renderProfile();
   }
 });
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async function() {
-  // Check for existing auth session
-  const { data: { session } } = await sb.auth.getSession();
-  currentUser = session ? session.user : null;
-  updateAuthUI();
+  // Auth state is handled entirely by onAuthStateChange (including INITIAL_SESSION)
+  // which is more reliable than getSession() when processing OAuth hash redirects
 
   // Render home page data
   await renderSessions();
