@@ -1,0 +1,11 @@
+#!/bin/sh
+echo "Running Playwright tests before push..."
+npm test
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "Tests failed. Push aborted."
+  echo "Run 'npm run test:report' to see the full report."
+  echo "To push anyway (not recommended): git push --no-verify"
+  exit 1
+fi
+echo "All tests passed. Pushing..."
