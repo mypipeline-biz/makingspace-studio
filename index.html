@@ -274,7 +274,7 @@
   .auth-footer a:hover { text-decoration: underline; }
 
   /* Account menu */
-  .account-menu { position: fixed; top: 1.2rem; right: 3rem; z-index: 101; }
+  .account-menu { position: relative; z-index: 101; }
   .account-btn { background: none; border: none; font-family: 'DM Mono', monospace; font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink); cursor: none; transition: color 0.2s; }
   .account-btn:hover { color: var(--pink); }
   .account-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--cream); border: 1px solid var(--pale); min-width: 180px; z-index: 102; }
@@ -659,6 +659,14 @@
     <li><a href="#" onclick="showPage('gallery')">Gallery</a></li>
     <li><a href="#" onclick="openAuth()" id="navSignIn">Sign In</a></li>
   </ul>
+  <div class="account-menu" id="accountMenu" style="display:none">
+    <button class="account-btn" onclick="toggleAccountMenu()">Account ▼</button>
+    <div class="account-dropdown" id="accountDropdown">
+      <a href="#" onclick="showPage('profile');toggleAccountMenu()">My Profile</a>
+      <a href="#" onclick="showPage('profile');document.getElementById('profileWishlist').scrollIntoView();toggleAccountMenu()">Wishlist</a>
+      <button onclick="handleLogout()">Logout</button>
+    </div>
+  </div>
 </nav>
 
 <!-- HOME -->
@@ -907,15 +915,6 @@
   </div>
 </div>
 
-<!-- ACCOUNT MENU -->
-<div class="account-menu" id="accountMenu" style="display:none">
-  <button class="account-btn" onclick="toggleAccountMenu()">Account ▼</button>
-  <div class="account-dropdown" id="accountDropdown">
-    <a href="#" onclick="showPage('profile');toggleAccountMenu()">My Profile</a>
-    <a href="#" onclick="showPage('profile');document.getElementById('profileWishlist').scrollIntoView();toggleAccountMenu()">Wishlist</a>
-    <button onclick="handleLogout()">Logout</button>
-  </div>
-</div>
 
 <!-- PROFILE PAGE -->
 <div id="profile" class="page">
