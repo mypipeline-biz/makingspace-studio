@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Making Space — Creative Studio</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fraunces:ital,wght@0,300;0,700;1,300;1,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
-<script>if(typeof bcrypt==='undefined'&&typeof dcodeIO!=='undefined')window.bcrypt=dcodeIO.bcrypt;</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --ink: #0f0e0c;
@@ -49,6 +48,16 @@
     transform: translate(-50%, -50%);
     opacity: 0.6;
   }
+
+  #toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(1rem);
+    background: var(--ink); color: var(--cream);
+    font-family: 'DM Mono', monospace; font-size: 0.8rem; letter-spacing: 0.05em;
+    padding: 0.75rem 1.5rem; z-index: 9999;
+    opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
   nav {
     position: fixed; top: 0; left: 0; right: 0;
@@ -648,6 +657,7 @@
 
 <div class="cursor" id="cursor"></div>
 <div class="cursor-ring" id="cursorRing"></div>
+<div id="toast"></div>
 
 <nav>
   <a href="#" class="nav-logo" onclick="showPage('home')">Making Space</a>
@@ -957,135 +967,38 @@
   </div>
 </div>
 
-<!-- OAUTH NAME MODAL -->
-<div class="modal-overlay" id="oauthNameModal">
-  <div class="modal" style="max-width:400px;padding:2.5rem">
-    <button class="modal-close" onclick="closeOauthModal()">✕</button>
-    <h2 id="oauthModalTitle">Continue with Google</h2>
-    <p style="margin:0.5rem 0 1.5rem;opacity:0.6;font-size:0.9rem">Enter your name to create your account</p>
-    <div class="form-group">
-      <label>Full Name</label>
-      <input type="text" id="oauthNameInput" placeholder="Your name" style="width:100%;padding:0.75rem;font-size:1rem;border:1px solid #ccc">
-    </div>
-    <div class="auth-error" id="oauthNameError" style="margin:0.5rem 0"></div>
-    <button class="submit-btn" onclick="confirmOauthSignup()" style="width:100%;margin-top:1rem">Create Account →</button>
-  </div>
-</div>
-
 <script>
-// ── DEFAULTS ─────────────────────────────────────────────────────────────────
-const DEFAULTS = {
-  siteInfo: {
-    tagline: "A creative studio and workshop space for makers, artists, and curious hands.",
-    address: "12 Kiln Lane, Chester, CH1 2AB",
-    hours: "Mon–Sat, 9am – 8pm",
-    email: "hello@makingspace.studio",
-    instagram: "https://instagram.com/makingspacestudio",
-    copyright: "© 2026 Making Space Studio"
-  },
-  disciplines: ["Pottery","Painting","Drawing","Textiles","Printmaking","Sculpture"],
-  sessions: [
-    { id:1, title:"Introduction to Wheel Throwing", instructor:"Rosa Chen", category:"pottery", day:"2", month:"APR", time:"10:00 – 13:00", spots:4, maxSpots:12, price:"£65",
-      description:"Get your hands on the wheel for the first time and discover one of the most meditative and rewarding crafts there is. This session takes you from total beginner to pulling your first cylinder — messy, joyful, and entirely your own.\n\nRosa guides every participant individually through centring, opening, and pulling up the clay. You'll leave with at least one finished piece ready to be collected after firing, and a new appreciation for patience.",
-      includes:["All materials & clay","Use of studio wheels","Glazing & firing included","Take-home finished piece","Apron & tools provided","Refreshments"],
-      galleryImages:[],
-      reviews:[
-        { author:"Sarah M.", stars:5, text:"I came in nervous and left absolutely hooked. Rosa makes you feel so at ease and celebrates every small win. My lopsided bowl is now my most treasured possession.", date:"March 2026" },
-        { author:"Tom K.", stars:5, text:"Genuinely the best three hours I've spent in ages. The studio is beautiful and the vibe is just right — focused but fun. Already booked the glazing workshop.", date:"February 2026" },
-        { author:"Priya D.", stars:4, text:"Brilliant session. The class is small enough that Rosa can really help you individually. Would love an intermediate follow-up session!", date:"January 2026" }
-      ]
-    },
-    { id:2, title:"Bold Colour — Acrylic Painting", instructor:"James Adeyemi", category:"painting", day:"5", month:"APR", time:"14:00 – 17:00", spots:8, maxSpots:12, price:"£55",
-      description:"Forget everything you think painting is supposed to look like. This session is about colour confidence — learning to trust your instincts, mix with intention, and make marks that actually mean something.\n\nJames starts each class with a series of rapid exercises to loosen you up, before moving into a longer piece where you'll explore composition, layering, and contrast. No subject matter is too mundane — a chair, a window, the texture of a wall. The point is the paint.",
-      includes:["All paints, canvas & brushes","Mixed media exploration","Take-home finished canvas","Colour theory handout","Artist's eye exercises","Refreshments"],
-      galleryImages:[],
-      reviews:[
-        { author:"Amir H.", stars:5, text:"James has this incredible ability to show you what you're actually trying to do, even when you don't know yourself. Walked out with a painting I genuinely love.", date:"March 2026" },
-        { author:"Claire B.", stars:5, text:"Three hours flew by. I've done art classes before and they always felt a bit stiff, but this was something else — energetic, honest, and really inspiring.", date:"March 2026" },
-        { author:"Jo W.", stars:4, text:"Great session, James is an excellent teacher. Studio atmosphere is fantastic. Docking one star only because I wish it was longer!", date:"February 2026" }
-      ]
-    },
-    { id:3, title:"Life Drawing Evening", instructor:"Mara Voss", category:"drawing", day:"8", month:"APR", time:"18:30 – 21:00", spots:2, maxSpots:12, price:"£40",
-      description:"A classic life drawing session in a warm, focused studio. Mara runs the evening with a loose structure — short gestural poses to start, moving to longer seated and reclining studies. There is no expectation of realism. The goal is observation.\n\nBring your own preferred medium or use what's available in the studio. This is a quiet, thoughtful session — bring a sketchpad and leave your phone at the door.",
-      includes:["Professional life model","Drawing papers & charcoals","Easels & boards provided","Take all work home","Evening refreshments","Optional charcoal tutorials"],
-      galleryImages:[],
-      reviews:[
-        { author:"Rachel F.", stars:5, text:"The best life drawing session in the city, full stop. Mara creates a really special atmosphere — unhurried, respectful, and genuinely instructive.", date:"March 2026" },
-        { author:"Daniel L.", stars:5, text:"I've been coming to these monthly for three months now and my drawing has transformed. It's become a ritual I look forward to every time.", date:"February 2026" },
-        { author:"Nina S.", stars:4, text:"Lovely evening class. The studio lighting is perfect and the model choices are interesting. A real refuge from the week.", date:"January 2026" }
-      ]
-    },
-    { id:4, title:"Natural Dye & Weaving", instructor:"Tomoko Kaito", category:"textiles", day:"12", month:"APR", time:"10:00 – 16:00", spots:0, maxSpots:10, price:"£85",
-      description:"A full-day immersion into the ancient craft of natural dyeing and hand weaving. You'll forage for plant-based dyes, prepare a mordant bath, dye your own yarn, and then weave it into a small textile piece to take home.\n\nTomoko has spent years studying both traditional Japanese dyeing methods and contemporary fibre practice. This is slow, deliberate, sensory work — you'll finish the day with dyed hands and a deep calm.",
-      includes:["All yarns & fibres","Natural dye materials","Loom use & instruction","Take-home woven piece","Lunch & refreshments","Materials handbook"],
-      galleryImages:[],
-      reviews:[
-        { author:"Freya A.", stars:5, text:"One of the most beautiful days I've had in years. Tomoko is a gentle and generous teacher and the results were stunning. I'm obsessed with natural dyeing now.", date:"February 2026" },
-        { author:"Marcus T.", stars:5, text:"I came because my partner dragged me along, and I'm now the one pushing to go back. The lunch break, the smells, the meditative weaving — perfect.", date:"January 2026" }
-      ]
-    },
-    { id:5, title:"Linocut Printmaking", instructor:"Samuel Okonkwo", category:"printmaking", day:"15", month:"APR", time:"13:00 – 16:00", spots:6, maxSpots:12, price:"£50",
-      description:"From blank lino to bold finished print in three hours. Samuel walks you through the full relief printmaking process: designing an image, cutting your block, inking up, and printing multiple editions on paper and fabric.\n\nNo drawing experience needed — the beauty of linocut is in the reduction. You'll leave with a set of your own prints and the skills to set up a basic print studio at home.",
-      includes:["Lino blocks & cutting tools","Printing inks & paper","Edition printing (8+ prints)","Fabric print option","Take all prints home","Technique reference card"],
-      galleryImages:[],
-      reviews:[
-        { author:"Harriet J.", stars:5, text:"Sam makes the whole process feel completely achievable. I designed something I thought was too ambitious and it came out beautifully. Brilliant afternoon.", date:"March 2026" },
-        { author:"Owen P.", stars:4, text:"Great session — really hands-on and satisfying. The smells of the inks, the weight of the roller, the reveal of the print — it's all very gratifying.", date:"February 2026" },
-        { author:"Beth C.", stars:5, text:"Came for a birthday activity with friends and we've all already booked the screenprinting follow-up. Samuel is a fantastic guide.", date:"January 2026" }
-      ]
-    },
-    { id:6, title:"Intermediate Glazing Workshop", instructor:"Rosa Chen", category:"pottery", day:"19", month:"APR", time:"10:00 – 14:00", spots:5, maxSpots:10, price:"£70",
-      description:"Already got the basics of wheel-throwing? This session focuses entirely on the transformation of glazing — how chemistry, temperature, and application technique turn raw clay into something extraordinary.\n\nYou'll glaze a set of bisque pieces using a range of studio glazes and application methods: dipping, pouring, wax resist, and layering. Rosa will explain the science behind glaze behaviour so you can start developing your own palette.",
-      includes:["Bisque pieces to glaze","Studio glaze palette","Multiple application demos","Firing included","Glaze recipe booklet","Refreshments"],
-      galleryImages:[],
-      reviews:[
-        { author:"Yuki M.", stars:5, text:"This filled the exact gap I had after the beginners wheel class. Rosa's knowledge of glaze chemistry is extraordinary and the results from my pieces blew me away.", date:"March 2026" },
-        { author:"Leo R.", stars:5, text:"The wax resist technique alone was worth the price. I've been potting at home and this has completely elevated my finishing work.", date:"February 2026" }
-      ]
-    },
-    { id:7, title:"Sculpture with Found Objects", instructor:"Luisa Paredes", category:"sculpture", day:"22", month:"APR", time:"11:00 – 16:00", spots:3, maxSpots:10, price:"£75",
-      description:"Bring nothing but curiosity. The studio will be full of found objects, offcuts, discarded materials, and raw elements — and your job is to make something that means something.\n\nLuisa's approach to sculpture is fundamentally about relationships: between form and space, between material and intention, between the made and the found. This is a thoughtful, exploratory session that will change how you look at everyday objects.",
-      includes:["All found materials & fixings","Wire, stone, wood offcuts","Hand tools & adhesives","Take-home finished piece","Artist's reflection exercise","Light lunch included"],
-      galleryImages:[],
-      reviews:[
-        { author:"Kim A.", stars:5, text:"Luisa is a revelation as a teacher. She has this gift of asking exactly the right question at the right moment. My piece surprised even me. One of the best creative experiences I've had.", date:"March 2026" },
-        { author:"Patrick S.", stars:4, text:"Unusual, challenging in the best way, and deeply satisfying. The found object approach strips away any preciousness and just lets you make.", date:"February 2026" }
-      ]
-    },
-    { id:8, title:"Portrait Drawing Masterclass", instructor:"Mara Voss", category:"drawing", day:"26", month:"APR", time:"14:00 – 17:00", spots:7, maxSpots:12, price:"£55",
-      description:"The human face is the hardest and most rewarding subject in drawing. This masterclass focuses on proportion, structure, and likeness — the three things that make or break a portrait.\n\nMara takes you through her method step by step: mapping the planes of the skull, placing features with accuracy, then loosening the line to find expression. You'll work from a live model and leave with two or three portrait studies you'll actually want to keep.",
-      includes:["All drawing materials","Live portrait model","Structured demos","Take all studies home","Proportion reference sheet","Refreshments"],
-      galleryImages:[],
-      reviews:[
-        { author:"Alice T.", stars:5, text:"My portraits always used to look like caricatures. After this session they actually look like people. Mara's method is clear, rigorous, and incredibly effective.", date:"March 2026" },
-        { author:"James B.", stars:5, text:"The skull mapping exercise changed everything for me. I've drawn faces for years but never understood the underlying structure this clearly before.", date:"February 2026" },
-        { author:"Chloe N.", stars:4, text:"Excellent session. Mara is precise and encouraging in equal measure. The class size means you get real individual feedback.", date:"January 2026" }
-      ]
-    }
-  ],
-  instructors: [
-    { id:1, initials:"RC", name:"Rosa Chen", role:"Lead Ceramicist", specialty:"Ceramics & Pottery", bio:"Rosa trained at the Royal College of Art and has exhibited across Europe. Her sessions focus on form, texture, and the meditative rhythm of the wheel.", gradient:"linear-gradient(135deg, #e8177a, #a8105a)" },
-    { id:2, initials:"JA", name:"James Adeyemi", role:"Painting Instructor", specialty:"Oil & Acrylic Painting", bio:"A self-taught painter turned gallery artist, James brings raw energy and bold colour theory to his workshops. Expect to get paint everywhere.", gradient:"linear-gradient(135deg, #3d5c32, #8aaa7a)" },
-    { id:3, initials:"MV", name:"Mara Voss", role:"Drawing & Illustration", specialty:"Life Drawing", bio:"Mara spent years as a figure drawing teacher in Berlin before making the UK her home. Her sessions are quiet, focused, and transformative.", gradient:"linear-gradient(135deg, #1a1a2e, #4a4a6e)" },
-    { id:4, initials:"TK", name:"Tomoko Kaito", role:"Textiles & Fibre Arts", specialty:"Textile & Weaving", bio:"Inspired by both traditional Japanese weaving and contemporary fibre art, Tomoko's sessions are explorations in material, pattern, and patience.", gradient:"linear-gradient(135deg, #d4a843, #a07820)" },
-    { id:5, initials:"SO", name:"Samuel Okonkwo", role:"Printmaking & Design", specialty:"Printmaking", bio:"Samuel's background in graphic design and relief printing fuses concept with craft. His workshops demystify the press and make printing accessible to all.", gradient:"linear-gradient(135deg, #a8105a, #e8177a)" },
-    { id:6, initials:"LP", name:"Luisa Paredes", role:"Sculpture & 3D Art", specialty:"Sculpture & Mixed Media", bio:"Luisa works in stone, wire, and found objects — often all at once. Her sessions challenge participants to think beyond the flat surface.", gradient:"linear-gradient(135deg, #2e3b4e, #5e7a9e)" }
-  ],
-  gallery: [
-    { id:1, title:"Earthen Form No. 3", artist:"Rosa Chen", price:"£280", forSale:true, symbol:"◈" },
-    { id:2, title:"Burn Season", artist:"James Adeyemi", price:"£450", forSale:true, symbol:"◆" },
-    { id:3, title:"Woven Light", artist:"Tomoko Kaito", price:"£320", forSale:true, symbol:"◇" },
-    { id:4, title:"Stance Study VII", artist:"Mara Voss", price:"", forSale:false, symbol:"☽" },
-    { id:5, title:"Press Run 001", artist:"Samuel Okonkwo", price:"£180", forSale:true, symbol:"❋" },
-    { id:6, title:"Fragment II", artist:"Luisa Paredes", price:"£640", forSale:true, symbol:"✶" },
-    { id:7, title:"Reduction Bowl", artist:"Rosa Chen", price:"£195", forSale:true, symbol:"❊" }
-  ]
-};
+// ── SUPABASE INIT ─────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://wulkmfjnijbplmgtiawt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind1bGttZmpuaWpicGxtZ3RpYXd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkwMTE0OTUsImV4cCI6MjA5NDU4NzQ5NX0.Y15JQyfkfic-yFPSLyta8_l4EGtYEz-HbrbrgsIpYvs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
 
-// ── DATA LAYER ────────────────────────────────────────────────────────────────
-function getData(key) {
-  try { const v = localStorage.getItem('mks_' + key); return v ? JSON.parse(v) : DEFAULTS[key]; }
-  catch(e) { return DEFAULTS[key]; }
+// ── SUPABASE DATA HELPERS ─────────────────────────────────────────────────────
+async function fetchSessions() {
+  const { data } = await sb.from('sessions').select('*').order('id');
+  return data || [];
+}
+async function fetchInstructors() {
+  const { data } = await sb.from('instructors').select('*').order('id');
+  return data || [];
+}
+async function fetchGallery() {
+  const { data } = await sb.from('gallery').select('*').order('id');
+  return data || [];
+}
+async function fetchDisciplines() {
+  const { data } = await sb.from('disciplines').select('*').order('name');
+  return data || [];
+}
+async function fetchSiteInfo() {
+  const { data } = await sb.from('site_info').select('*').single();
+  return data || {};
+}
+async function fetchWishlist() {
+  if (!currentUser) return [];
+  const { data } = await sb.from('wishlist').select('session_id').eq('user_id', currentUser.id);
+  return (data || []).map(r => r.session_id);
 }
 
 // ── CURSOR ────────────────────────────────────────────────────────────────────
@@ -1097,39 +1010,41 @@ document.addEventListener('mousemove', e => {
 });
 
 // ── PAGES ─────────────────────────────────────────────────────────────────────
-function showPage(id) {
+async function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (id === 'sessions') renderSessions();
-  if (id === 'instructors') renderInstructors();
-  if (id === 'gallery') renderGallery();
-  if (id === 'profile') renderProfile();
+  if (id === 'sessions') await renderSessions();
+  if (id === 'instructors') await renderInstructors();
+  if (id === 'gallery') await renderGallery();
+  if (id === 'profile') await renderProfile();
   setTimeout(animateFadeIns, 100);
 }
 
 // ── MARQUEE ───────────────────────────────────────────────────────────────────
-function renderMarquee() {
-  const disciplines = getData('disciplines');
-  const items = [...disciplines, ...disciplines].map(d =>
+async function renderMarquee() {
+  const disciplinesData = await fetchDisciplines();
+  const names = disciplinesData.map(d => d.name);
+  const items = [...names, ...names].map(d =>
     `<span class="marquee-item">${d}</span><span class="marquee-dot">✦</span>`
   ).join('');
   document.getElementById('marqueeTrack').innerHTML = items;
 }
 
 // ── FOOTER ────────────────────────────────────────────────────────────────────
-function renderFooter() {
-  const info = getData('siteInfo');
+async function renderFooter() {
+  const info = await fetchSiteInfo();
+  if (!info || !info.tagline) return;
   document.getElementById('footerTagline').textContent = info.tagline;
   document.getElementById('footerCopy').textContent = info.copyright;
   document.getElementById('footerStudio').innerHTML = `
-    <li><span>${info.hours.split(',')[0] || 'Mon–Sat'}</span></li>
-    <li><span>${info.hours.split(',')[1]?.trim() || '9am – 8pm'}</span></li>
-    <li><span>${info.address}</span></li>`;
+    <li><span>${info.hours ? (info.hours.split(',')[0] || 'Mon–Sat') : 'Mon–Sat'}</span></li>
+    <li><span>${info.hours ? (info.hours.split(',')[1]?.trim() || '9am – 8pm') : '9am – 8pm'}</span></li>
+    <li><span>${info.address || ''}</span></li>`;
   document.getElementById('footerConnect').innerHTML = `
-    <li><a href="${info.instagram}">Instagram</a></li>
+    <li><a href="${info.instagram || '#'}">Instagram</a></li>
     <li><a href="#">Newsletter</a></li>
-    <li><a href="mailto:${info.email}">${info.email}</a></li>`;
+    <li><a href="mailto:${info.email || ''}">${info.email || ''}</a></li>`;
 }
 
 // ── SESSIONS ──────────────────────────────────────────────────────────────────
@@ -1138,13 +1053,13 @@ function filterSessions(btn, cat) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active'); activeFilter = cat; renderSessions();
 }
-function renderSessions() {
-  const sessions = getData('sessions');
-  const disciplines = getData('disciplines');
+async function renderSessions() {
+  const sessions = await fetchSessions();
+  const disciplinesData = await fetchDisciplines();
   // Filter bar
   const filterEl = document.getElementById('sessionsFilter');
   filterEl.innerHTML = `<button class="filter-btn ${activeFilter==='all'?'active':''}" onclick="filterSessions(this,'all')">All</button>` +
-    disciplines.map(d => `<button class="filter-btn ${activeFilter===d.toLowerCase()?'active':''}" onclick="filterSessions(this,'${d.toLowerCase()}')">${d}</button>`).join('');
+    disciplinesData.map(d => `<button class="filter-btn ${activeFilter===d.name.toLowerCase()?'active':''}" onclick="filterSessions(this,'${d.name.toLowerCase()}')">${d.name}</button>`).join('');
   // List
   const filtered = activeFilter === 'all' ? sessions : sessions.filter(s => s.category === activeFilter);
   const spotsClass = s => s.spots === 0 ? 'full' : s.spots <= 3 ? 'low' : '';
@@ -1162,8 +1077,8 @@ function renderSessions() {
 }
 
 // ── INSTRUCTORS ───────────────────────────────────────────────────────────────
-function renderInstructors() {
-  const instructors = getData('instructors');
+async function renderInstructors() {
+  const instructors = await fetchInstructors();
   document.getElementById('instructorsGrid').innerHTML = instructors.map(i => `
     <div class="instructor-card fade-in">
       <div class="instructor-img">
@@ -1192,9 +1107,9 @@ const galleryGradients = [
   'linear-gradient(135deg, #5e3a6e, #2e1a3e)',
   'linear-gradient(135deg, #3d5c32, #8aaa7a)'
 ];
-function renderGallery() {
-  const gallery = getData('gallery');
-  const forSale = gallery.filter(g => g.forSale).length;
+async function renderGallery() {
+  const gallery = await fetchGallery();
+  const forSale = gallery.filter(g => g.for_sale).length;
   document.getElementById('galleryCount').textContent = `${forSale} work${forSale !== 1 ? 's' : ''} available`;
   document.getElementById('galleryGrid').innerHTML = gallery.map((g, i) => `
     <div class="gallery-item">
@@ -1202,7 +1117,7 @@ function renderGallery() {
       <div class="gallery-overlay">
         <p class="gallery-item-artist">${g.artist}</p>
         <p class="gallery-item-title">${g.title}</p>
-        ${g.forSale
+        ${g.for_sale
           ? `<p class="gallery-price">${g.price}</p><button class="gallery-buy-btn">Enquire →</button>`
           : `<p class="not-for-sale">Not for sale</p>`}
       </div>
@@ -1224,9 +1139,9 @@ const sessionSymbols = ['◈','◆','◇','☽','❋','✶','❊','✦'];
 
 let currentSessionId = null;
 
-function openSessionDetail(id) {
-  const sessions = getData('sessions');
-  const instructors = getData('instructors');
+async function openSessionDetail(id) {
+  const sessions = await fetchSessions();
+  const instructors = await fetchInstructors();
   const s = sessions.find(x => x.id === id);
   if (!s) return;
   currentSessionId = id;
@@ -1237,8 +1152,8 @@ function openSessionDetail(id) {
 
   // Hero background
   const heroBg = document.getElementById('sdHeroBgInner');
-  if (s.galleryImages && s.galleryImages.length > 0) {
-    heroBg.innerHTML = `<img src="${s.galleryImages[0]}" style="width:100%;height:100%;object-fit:cover;display:block">`;
+  if (s.gallery_images && s.gallery_images.length > 0) {
+    heroBg.innerHTML = `<img src="${s.gallery_images[0]}" style="width:100%;height:100%;object-fit:cover;display:block">`;
   } else {
     heroBg.innerHTML = `<div style="width:100%;height:340px;background:${grad};display:flex;align-items:center;justify-content:center;font-size:10rem;color:rgba(245,240,232,0.08);font-family:'Bebas Neue',sans-serif">${sym}</div>`;
   }
@@ -1249,7 +1164,7 @@ function openSessionDetail(id) {
   document.getElementById('sdMetaRow').innerHTML = `
     <span class="sd-meta-pill"><span class="icon">◆</span>${s.day} ${s.month}</span>
     <span class="sd-meta-pill"><span class="icon">◆</span>${s.time}</span>
-    <span class="sd-meta-pill"><span class="icon">◆</span>Up to ${s.maxSpots} people</span>
+    <span class="sd-meta-pill"><span class="icon">◆</span>Up to ${s.max_spots} people</span>
     <span class="sd-price-badge">${s.price}</span>`;
 
   // Action bar
@@ -1262,7 +1177,7 @@ function openSessionDetail(id) {
   bookBtn.textContent = s.spots === 0 ? 'Fully Booked' : 'Book Now →';
 
   // Save button state
-  updateSaveButton(id);
+  await updateSaveButton(id);
 
   // Description
   const desc = s.description || `A ${s.category} session led by ${s.instructor}. All skill levels welcome — materials are provided and no experience is necessary.`;
@@ -1290,7 +1205,7 @@ function openSessionDetail(id) {
   }
 
   // Gallery thumbnails
-  const images = s.galleryImages && s.galleryImages.length > 0 ? s.galleryImages : null;
+  const images = s.gallery_images && s.gallery_images.length > 0 ? s.gallery_images : null;
   const thumbGrads = [
     `linear-gradient(135deg,${grad.match(/#[0-9a-f]+/gi)?.[0]||'#e8177a'},${grad.match(/#[0-9a-f]+/gi)?.[1]||'#a8105a'})`,
     'linear-gradient(135deg,#8aaa7a,#3d5c32)',
@@ -1349,8 +1264,8 @@ document.getElementById('sdOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeSessionDetail();
 });
 
-function sdBookNow() {
-  const sessions = getData('sessions');
+async function sdBookNow() {
+  const sessions = await fetchSessions();
   const s = sessions.find(x => x.id === currentSessionId);
   if (!s || s.spots === 0) return;
   closeSessionDetail();
@@ -1360,31 +1275,35 @@ function sdBookNow() {
 }
 
 // ── WISHLIST ──────────────────────────────────────────────────────────────────
-function getWishlist() { try { return JSON.parse(localStorage.getItem('mks_wishlist') || '[]'); } catch(e) { return []; } }
-function setWishlist(list) { localStorage.setItem('mks_wishlist', JSON.stringify(list)); }
-
-function toggleSave() {
-  if (!currentSessionId) return;
-  const list = getWishlist();
-  const idx = list.indexOf(currentSessionId);
-  if (idx >= 0) list.splice(idx, 1); else list.push(currentSessionId);
-  setWishlist(list);
-  updateSaveButton(currentSessionId);
+async function getWishlist() {
+  return await fetchWishlist();
 }
-
-function updateSaveButton(id) {
-  const saved = getWishlist().includes(id);
+async function toggleSave() {
+  if (!currentUser || !currentSessionId) return;
+  const list = await fetchWishlist();
+  if (list.includes(currentSessionId)) {
+    await sb.from('wishlist').delete().eq('user_id', currentUser.id).eq('session_id', currentSessionId);
+  } else {
+    await sb.from('wishlist').insert({ user_id: currentUser.id, session_id: currentSessionId });
+  }
+  await updateSaveButton(currentSessionId);
+}
+async function updateSaveButton(id) {
+  const list = await fetchWishlist();
+  const saved = list.includes(id);
   const btn = document.getElementById('sdSaveBtn');
-  btn.classList.toggle('saved', saved);
-  btn.title = saved ? 'Saved to wishlist' : 'Save to wishlist';
-  btn.innerHTML = saved ? '♥' : '♡';
+  if (btn) {
+    btn.classList.toggle('saved', saved);
+    btn.title = saved ? 'Saved to wishlist' : 'Save to wishlist';
+    btn.innerHTML = saved ? '♥' : '♡';
+  }
 }
 
 // ── LIGHTBOX ──────────────────────────────────────────────────────────────────
-function openLightbox(thumbIdx, sessionId) {
-  const sessions = getData('sessions');
+async function openLightbox(thumbIdx, sessionId) {
+  const sessions = await fetchSessions();
   const s = sessions.find(x => x.id === sessionId);
-  const images = s && s.galleryImages && s.galleryImages.length > 0 ? s.galleryImages : null;
+  const images = s && s.gallery_images && s.gallery_images.length > 0 ? s.gallery_images : null;
   const thumbGrads = [
     'linear-gradient(135deg,#e8177a,#a8105a)',
     'linear-gradient(135deg,#8aaa7a,#3d5c32)',
@@ -1426,15 +1345,6 @@ function confirmBooking() {
   if (formWrapper) formWrapper.style.display = 'none';
   if (successMsg) successMsg.style.display = 'block';
 }
-document.addEventListener('DOMContentLoaded', function() {
-  const bookingModal = document.getElementById('bookingModal');
-  if (bookingModal) {
-    bookingModal.addEventListener('click', function(e) {
-      if (e.target === this) closeModal();
-    });
-  }
-});
-
 // ── SIGNUP ────────────────────────────────────────────────────────────────────
 function submitSignup() { document.getElementById('signupFormWrapper').style.display = 'none'; document.getElementById('signupSuccess').style.display = 'block'; }
 
@@ -1446,31 +1356,6 @@ function animateFadeIns() {
 }
 
 // ── AUTHENTICATION ────────────────────────────────────────────────────────────
-const AUTH_SALT_ROUNDS = 10;
-
-// Secure user storage
-function getUsersDB() {
-  try { return JSON.parse(localStorage.getItem('mks_users') || '{}'); }
-  catch(e) { return {}; }
-}
-function setUsersDB(users) { localStorage.setItem('mks_users', JSON.stringify(users)); }
-
-function getCurrentUser() {
-  try { return JSON.parse(localStorage.getItem('mks_currentUser') || 'null'); }
-  catch(e) { return null; }
-}
-function setCurrentUser(user) {
-  if (user) localStorage.setItem('mks_currentUser', JSON.stringify(user));
-  else localStorage.removeItem('mks_currentUser');
-  updateAuthUI();
-}
-
-function hashPassword(password) {
-  return bcrypt.hashSync(password, AUTH_SALT_ROUNDS);
-}
-function comparePassword(password, hash) {
-  return bcrypt.compareSync(password, hash);
-}
 
 // Auth modal controls
 function openAuth(tab = 'login') {
@@ -1505,39 +1390,15 @@ async function handleLogin(e) {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value.trim().toLowerCase();
   const password = document.getElementById('loginPassword').value;
-  const rememberMe = document.getElementById('rememberMe').checked;
   const errorEl = document.getElementById('loginError');
 
-  try {
-    const users = getUsersDB();
-    const user = Object.values(users).find(u => u.email === email);
-
-    if (!user) {
-      errorEl.textContent = 'Email or password incorrect.';
-      errorEl.classList.add('show');
-      return;
-    }
-
-    const passwordMatch = await new Promise(resolve => {
-      setTimeout(() => resolve(comparePassword(password, user.passwordHash)), 0);
-    });
-
-    if (!passwordMatch) {
-      errorEl.textContent = 'Email or password incorrect.';
-      errorEl.classList.add('show');
-      return;
-    }
-
-    // Success
-    const userSession = { id: user.id, name: user.name, email: user.email, phone: user.phone, experience: user.experience };
-    if (rememberMe) userSession.rememberMe = true;
-    setCurrentUser(userSession);
-    closeAuth();
-    showToast(`Welcome back, ${user.name}!`);
-  } catch(err) {
-    errorEl.textContent = 'An error occurred. Please try again.';
-    errorEl.classList.add('show');
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    errorEl.textContent = 'Email or password incorrect.';
+    errorEl.classList.add('show'); return;
   }
+  closeAuth();
+  showToast(`Welcome back, ${data.user.user_metadata.name || email}!`);
 }
 
 // Handle signup
@@ -1550,102 +1411,37 @@ async function handleSignup(e) {
   const experience = document.getElementById('signupExperience').value;
   const errorEl = document.getElementById('signupError');
 
-  if (typeof bcrypt === 'undefined') {
-    errorEl.textContent = 'Security library not loaded. Please refresh the page.';
-    errorEl.classList.add('show');
-    return;
+  if (password.length < 8) {
+    errorEl.textContent = 'Password must be at least 8 characters.';
+    errorEl.classList.add('show'); return;
   }
 
-  try {
-    if (password.length < 8) {
-      errorEl.textContent = 'Password must be at least 8 characters.';
-      errorEl.classList.add('show');
-      return;
+  const { data, error } = await sb.auth.signUp({
+    email, password,
+    options: { data: { name, phone, experience } }
+  });
+
+  if (error) {
+    errorEl.textContent = error.message;
+    errorEl.classList.add('show'); return;
+  }
+  closeAuth();
+  showToast(`Welcome to Making Space, ${name}!`);
+}
+
+// OAuth signup
+async function oauthSignup(provider) {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: window.location.origin + window.location.pathname
     }
-
-    const users = getUsersDB();
-    if (Object.values(users).find(u => u.email === email)) {
-      errorEl.textContent = 'An account with this email already exists.';
-      errorEl.classList.add('show');
-      return;
-    }
-
-    // Hash password
-    const passwordHash = await new Promise(resolve => {
-      setTimeout(() => resolve(hashPassword(password)), 0);
-    });
-
-    const userId = 'user_' + Date.now();
-    const newUser = { id: userId, name, email, passwordHash, phone, experience, createdAt: new Date().toISOString() };
-    users[userId] = newUser;
-    setUsersDB(users);
-
-    // Auto-login
-    const userSession = { id: userId, name, email, phone, experience };
-    setCurrentUser(userSession);
-    closeAuth();
-    showToast(`Welcome to Making Space, ${name}!`);
-  } catch(err) {
-    errorEl.textContent = 'An error occurred. Please try again.';
-    errorEl.classList.add('show');
-  }
+  });
+  if (error) showToast('OAuth sign in failed. Please try again.');
 }
 
-// OAuth signup (mocked)
-let _oauthProvider = null;
-
-function oauthSignup(provider) {
-  _oauthProvider = provider;
-  const modal = document.getElementById('oauthNameModal');
-  document.getElementById('oauthModalTitle').textContent =
-    `Continue with ${provider === 'google' ? 'Google' : 'Apple'}`;
-  document.getElementById('oauthNameInput').value = '';
-  document.getElementById('oauthNameError').textContent = '';
-  document.getElementById('oauthNameError').classList.remove('show');
-  modal.classList.add('open');
-  setTimeout(() => document.getElementById('oauthNameInput').focus(), 50);
-}
-
-function closeOauthModal() {
-  document.getElementById('oauthNameModal').classList.remove('open');
-  _oauthProvider = null;
-}
-
-async function confirmOauthSignup() {
-  const name = document.getElementById('oauthNameInput').value.trim();
-  const errorEl = document.getElementById('oauthNameError');
-  if (!name) {
-    errorEl.textContent = 'Please enter your name.';
-    errorEl.classList.add('show');
-    return;
-  }
-  const provider = _oauthProvider;
-  try {
-    const users = getUsersDB();
-    const oauthId = `${provider}_${Date.now()}`;
-    const email = `${provider}_${Date.now()}@makingspace.local`;
-    const userId = 'user_' + Date.now();
-    const newUser = {
-      id: userId, name, email,
-      oauthProvider: provider, oauthId,
-      phone: '', experience: 'Complete beginner',
-      createdAt: new Date().toISOString()
-    };
-    users[userId] = newUser;
-    setUsersDB(users);
-    const userSession = { id: userId, name, email, phone: '', experience: 'Complete beginner', oauthProvider: provider };
-    setCurrentUser(userSession);
-    closeOauthModal();
-    closeAuth();
-    showToast(`Welcome to Making Space, ${name}!`);
-  } catch(err) {
-    errorEl.textContent = 'Sign up failed. Please try again.';
-    errorEl.classList.add('show');
-  }
-}
-
-function handleLogout() {
-  setCurrentUser(null);
+async function handleLogout() {
+  await sb.auth.signOut();
   showToast('You have been logged out.');
 }
 
@@ -1664,75 +1460,56 @@ document.addEventListener('click', function(e) {
 
 // Update auth UI based on login state
 function updateAuthUI() {
-  const user = getCurrentUser();
-  const navSignIn = document.getElementById('navSignIn');
+  const signInLink = document.getElementById('navSignIn');
   const accountMenu = document.getElementById('accountMenu');
-
-  if (user) {
-    navSignIn.style.display = 'none';
-    accountMenu.style.display = 'block';
+  if (currentUser) {
+    if (signInLink) signInLink.style.display = 'none';
+    if (accountMenu) accountMenu.style.display = 'block';
   } else {
-    navSignIn.style.display = 'block';
-    accountMenu.style.display = 'none';
+    if (signInLink) signInLink.style.display = '';
+    if (accountMenu) accountMenu.style.display = 'none';
   }
 }
 
 // Pre-fill booking form with logged-in user
 function prefillBookingForm() {
-  const user = getCurrentUser();
-  if (!user) return;
-
-  const inputs = document.querySelectorAll('#bookingFormWrapper input, #bookingFormWrapper select');
-  if (inputs.length >= 5) {
-    inputs[0].value = user.name.split(' ')[0] || '';
-    inputs[1].value = user.name.split(' ').slice(1).join(' ') || '';
-    inputs[2].value = user.email || '';
-    inputs[3].value = user.phone || '';
-    inputs[4].value = user.experience || 'Complete beginner';
-  }
+  if (!currentUser) return;
+  const meta = currentUser.user_metadata || {};
+  const name = meta.name || '';
+  const parts = name.split(' ');
+  const firstNameEl = document.querySelector('#bookingFormWrapper input[placeholder="Your name"]');
+  const lastNameEl = document.querySelector('#bookingFormWrapper input[placeholder="Surname"]');
+  const emailEl = document.querySelector('#bookingFormWrapper input[type="email"]');
+  const phoneEl = document.querySelector('#bookingFormWrapper input[type="tel"]');
+  if (firstNameEl) firstNameEl.value = parts[0] || '';
+  if (lastNameEl) lastNameEl.value = parts.slice(1).join(' ') || '';
+  if (emailEl) emailEl.value = currentUser.email || '';
+  if (phoneEl) phoneEl.value = meta.phone || '';
 }
 
 // Show profile page
-function renderProfile() {
-  const user = getCurrentUser();
-  if (!user) { showPage('home'); return; }
-
-  document.getElementById('profileName').textContent = user.name + "'s Profile";
-
-  // Account info
-  document.getElementById('profileDisplay').innerHTML = `
-    <div class="profile-info-row">
-      <span class="profile-info-label">Full Name</span>
-      <span class="profile-info-value">${user.name}</span>
-    </div>
-    <div class="profile-info-row">
-      <span class="profile-info-label">Email</span>
-      <span class="profile-info-value">${user.email}</span>
-    </div>
-    <div class="profile-info-row">
-      <span class="profile-info-label">Phone</span>
-      <span class="profile-info-value">${user.phone || '—'}</span>
-    </div>
-    <div class="profile-info-row">
-      <span class="profile-info-label">Experience Level</span>
-      <span class="profile-info-value">${user.experience || 'Not set'}</span>
-    </div>
-    ${!user.oauthProvider ? '<div class="profile-info-row"><span class="profile-info-label">Account Type</span><span class="profile-info-value">Email & Password</span></div>' : `<div class="profile-info-row"><span class="profile-info-label">Account Type</span><span class="profile-info-value">Signed in with ${user.oauthProvider.charAt(0).toUpperCase() + user.oauthProvider.slice(1)}</span></div>`}`;
-
-  // Wishlist
-  const wishlist = getWishlist();
-  const sessions = getData('sessions');
-  const wishlistSessions = sessions.filter(s => wishlist.includes(s.id));
-
-  if (wishlistSessions.length === 0) {
-    document.getElementById('profileWishlist').innerHTML = `<div class="empty-state">No saved sessions yet. <a href="#" onclick="showPage('sessions')" style="color:var(--pink)">Browse sessions →</a></div>`;
-  } else {
-    document.getElementById('profileWishlist').innerHTML = `<div class="wishlist-grid">${wishlistSessions.map(s => `
-      <div class="wishlist-item">
-        <div class="wishlist-item-title">${s.title}</div>
-        <div class="wishlist-item-meta">${s.day} ${s.month} · ${s.instructor}</div>
-        <button class="wishlist-item-btn" onclick="openSessionDetail(${s.id});showPage('sessions')">View Session</button>
-      </div>`).join('')}</div>`;
+async function renderProfile() {
+  if (!currentUser) return;
+  const meta = currentUser.user_metadata || {};
+  document.getElementById('profileName').textContent = meta.name || currentUser.email;
+  const display = document.getElementById('profileDisplay');
+  if (display) {
+    display.innerHTML = `
+      <div class="profile-info-row"><span class="profile-info-label">Name</span><span>${meta.name || '—'}</span></div>
+      <div class="profile-info-row"><span class="profile-info-label">Email</span><span>${currentUser.email}</span></div>
+      <div class="profile-info-row"><span class="profile-info-label">Phone</span><span>${meta.phone || '—'}</span></div>
+      <div class="profile-info-row"><span class="profile-info-label">Experience Level</span><span>${meta.experience || '—'}</span></div>
+    `;
+  }
+  // Render wishlist
+  const wishlistIds = await fetchWishlist();
+  const sessions = await fetchSessions();
+  const saved = sessions.filter(s => wishlistIds.includes(s.id));
+  const wishlistEl = document.getElementById('profileWishlist');
+  if (wishlistEl) {
+    wishlistEl.innerHTML = saved.length
+      ? saved.map(s => `<div class="wishlist-item" onclick="openSessionDetail(${s.id})">${s.title} · ${s.day} ${s.month} · ${s.price}</div>`).join('')
+      : '<p style="opacity:0.5">No saved sessions yet.</p>';
   }
 }
 
@@ -1748,11 +1525,36 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+// ── AUTH STATE LISTENER ───────────────────────────────────────────────────────
+sb.auth.onAuthStateChange(async (event, session) => {
+  currentUser = session ? session.user : null;
+  updateAuthUI();
+  if (event === 'SIGNED_IN') {
+    renderProfile();
+  }
+});
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
-renderMarquee();
-renderFooter();
-animateFadeIns();
-updateAuthUI();
+document.addEventListener('DOMContentLoaded', async function() {
+  // Check for existing auth session
+  const { data: { session } } = await sb.auth.getSession();
+  currentUser = session ? session.user : null;
+  updateAuthUI();
+
+  // Render home page data
+  await renderSessions();
+  await renderMarquee();
+  await renderFooter();
+  animateFadeIns();
+
+  // Booking modal click-outside handler
+  const bookingModal = document.getElementById('bookingModal');
+  if (bookingModal) {
+    bookingModal.addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+  }
+});
 </script>
 </body>
 </html>
